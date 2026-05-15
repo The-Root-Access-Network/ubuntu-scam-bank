@@ -1,8 +1,35 @@
 // src/lib/supabase/middleware.ts
-//
-// This will export an `updateSession` function that the root middleware.ts calls.
-// It uses @supabase/ssr to refresh the user's auth session on every request,
-// which is required for server components to read auth state correctly.
-//
-// Implemented in step 3 — Supabase setup.
-export {}
+
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function updateSession(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // Refresh the session token. The await is load-bearing — do not remove it.
+  // This keeps the user's session alive across Server Component renders.
+  await supabase.auth.getUser()
+
+  return supabaseResponse
+}
