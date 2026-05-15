@@ -72,13 +72,72 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ```sh
 ubuntu-scam-bank/
-├── app/                  # Next.js App Router pages and layouts
-├── components/           # Reusable UI components
-├── lib/                  # Supabase client, utilities, helpers
-├── types/                # TypeScript type definitions
-├── public/               # Static assets
-└── supabase/             # Database migrations and seed files
+├── src/
+│   ├── app/
+│   │   ├── (public)/              # Route group — public-facing pages
+│   │   │   └── page.tsx           # Homepage (move the default page.tsx here)
+│   │   ├── api/                   # API routes
+│   │   │   ├── reports/
+│   │   │   │   └── route.ts       # GET /api/reports
+│   │   │   ├── submit/
+│   │   │   │   └── route.ts       # POST /api/submit
+│   │   │   └── triage/
+│   │   │       └── route.ts       # Internal: Claude triage pipeline
+│   │   ├── globals.css
+│   │   ├── layout.tsx             # Root layout
+│   │   └── not-found.tsx
+│   ├── components/
+│   │   ├── ui/                    # Primitive components (Button, Badge, Card...)
+│   │   ├── layout/                # Nav, Footer, PageWrapper
+│   │   ├── forms/                 # SubmissionForm, TypeSelector, SeverityPicker
+│   │   └── feed/                  # FeedCard, FeedList, FeedFilters
+│   ├── lib/
+│   │   ├── supabase/
+│   │   │   ├── client.ts          # Browser Supabase client
+│   │   │   ├── server.ts          # Server-side Supabase client
+│   │   │   └── middleware.ts      # Session refresh helper
+│   │   ├── ai/
+│   │   │   ├── triage.ts          # Claude triage pipeline (from AI_TRIAGE.md)
+│   │   │   └── prompts.ts         # System prompt — kept separate for easy editing
+│   │   ├── points/
+│   │   │   └── calculate.ts       # Points + bonus logic
+│   │   └── utils.ts               # cn() helper, formatters, etc.
+│   ├── types/
+│   │   ├── database.ts            # Supabase table types (you'll generate these later)
+│   │   └── triage.ts              # TriageResult, PointsResult interfaces
+│   └── hooks/                     # Custom React hooks (useReports, useLeaderboard, etc.)
+│       └── .gitkeep
+├── public/
+├── .env.local                     # Never committed
+├── .env.example                   # Committed — template with no real values
+├── middleware.ts                  # Next.js middleware (Supabase session refresh)
+├── next.config.ts
+├── tailwind.config.ts
+├── tsconfig.json
+└── package.json
 ```
+
+---
+
+## Design Guide - References for when writing components
+
+| You need                         | Tailwind class                 |
+| -------------------------------- | ------------------------------ |
+| Brand green background           | `bg-brand`                     |
+| Dark green text (on light badge) | `text-brand-dark`              |
+| Light green card background      | `bg-brand-light`               |
+| Phishing badge                   | `bg-phishing-bg text-phishing` |
+| Severity high dot                | `bg-severity-high`             |
+| White card surface               | `bg-canvas`                    |
+| Off-white page background        | `bg-canvas-subtle`             |
+| Primary body text                | `text-fg`                      |
+| Muted/secondary text             | `text-fg-muted`                |
+| Subtle border (0.5px cards)      | `border-stroke-faint`          |
+| Card shadow                      | `shadow-card`                  |
+| Card border radius               | `rounded-lg`                   |
+| Input border radius              | `rounded-md`                   |
+| Sans font                        | `font-sans`                    |
+| Mono font (IOCs, API code)       | `font-mono`                    |
 
 ---
 
