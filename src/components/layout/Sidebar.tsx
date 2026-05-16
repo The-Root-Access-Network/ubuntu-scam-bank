@@ -1,0 +1,182 @@
+// src/components/layout/Sidebar.tsx
+
+import { IconCode, IconTrophy } from '@tabler/icons-react';
+import { BADGE_META } from '@/lib/utils';
+import type { Tables } from '@/types/database';
+
+type LeaderboardUser = Pick<
+  Tables<'users'>,
+  'id' | 'username' | 'points' | 'badge' | 'country_code'
+>;
+
+// Deterministic avatar colour derived from first character of username.
+// Keeps avatars consistent across renders without needing stored preferences.
+const AVATAR_PALETTE = [
+  { bg: '#E1F5EE', fg: '#085041' },
+  { bg: '#E6F1FB', fg: '#0C447C' },
+  { bg: '#FAEEDA', fg: '#633806' },
+  { bg: '#FAECE7', fg: '#712B13' },
+  { bg: '#EEEDFE', fg: '#3C3489' },
+  { bg: '#F1EFE8', fg: '#5F5E5A' },
+];
+
+function avatarStyle(username: string) {
+  return AVATAR_PALETTE[username.charCodeAt(0) % AVATAR_PALETTE.length];
+}
+
+function initials(username: string) {
+  return username.slice(0, 2).toUpperCase();
+}
+
+// Rank number colours matching the mockup
+const RANK_COLOR: Record<number, string> = {
+  1: '#BA7517', // gold
+  2: '#888780', // silver
+  3: '#993C1D', // bronze
+};
+
+export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
+  return (
+    <>
+      {/* ── Leaderboard ──────────────────────────────────────────────── */}
+      <div className='bg-canvas border border-stroke-faint rounded-lg p-5'>
+        {/* Title */}
+        <div className='flex items-center gap-1.5 mb-3.5'>
+          <IconTrophy size={14} className='text-fg-muted' aria-hidden='true' />
+          <p className='text-label text-fg-muted uppercase tracking-label'>
+            Leaderboard
+          </p>
+        </div>
+
+        {/* Tab strip — UK/NG filtering is Phase 2; Global is active for MVP */}
+        <div className='flex gap-1 mb-3'>
+          {['Global', 'UK', 'NG'].map((tab) => (
+            <span
+              key={tab}
+              className={[
+                'text-[12px] px-3 py-1 rounded-md border',
+                tab === 'Global'
+                  ? 'bg-canvas-subtle border-stroke text-fg'
+                  : 'border-transparent text-fg-muted cursor-not-allowed opacity-60',
+              ].join(' ')}
+            >
+              {tab}
+            </span>
+          ))}
+        </div>
+
+        {/* Entries */}
+        {topUsers.length === 0 ? (
+          <p className='text-body-xs text-fg-muted text-center py-6'>
+            No contributors yet.
+          </p>
+        ) : (
+          <div>
+            {topUsers.map((user, i) => {
+              const rank = i + 1;
+              const av = avatarStyle(user.username);
+              const badge = BADGE_META[user.badge] ?? BADGE_META.watcher;
+
+              return (
+                <div
+                  key={user.id}
+                  className={[
+                    'flex items-center gap-2.5 py-2',
+                    i < topUsers.length - 1
+                      ? 'border-b border-stroke-faint'
+                      : '',
+                  ].join(' ')}
+                >
+                  {/* Rank */}
+                  <span
+                    className='text-[13px] font-medium w-5 text-center shrink-0'
+                    style={{ color: RANK_COLOR[rank] ?? 'var(--fg-muted)' }}
+                  >
+                    {rank}
+                  </span>
+
+                  {/* Avatar */}
+                  <div
+                    className='w-[30px] h-[30px] rounded-full flex items-center justify-center text-[11px] font-medium shrink-0'
+                    style={{ background: av.bg, color: av.fg }}
+                  >
+                    {initials(user.username)}
+                  </div>
+
+                  {/* Name + sub */}
+                  <div className='flex-1 min-w-0'>
+                    <p className='text-[13px] font-medium text-fg truncate'>
+                      {user.username}
+                    </p>
+                    <p className='text-caption text-fg-muted truncate'>
+                      {badge.label}
+                      {user.country_code ? ` · ${user.country_code}` : ''}
+                    </p>
+                  </div>
+
+                  {/* Points */}
+                  <span className='text-[13px] font-medium text-brand shrink-0'>
+                    {user.points.toLocaleString()}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <button
+          type='button'
+          className='w-full mt-3 text-[12px] px-3.5 py-1.5 border border-stroke rounded-md bg-transparent text-fg hover:bg-canvas-subtle transition-colors duration-150 cursor-pointer'
+        >
+          View full leaderboard ↗
+        </button>
+      </div>
+
+      {/* ── Shield score ──────────────────────────────────────────────── */}
+      <div className='bg-canvas border border-stroke-faint rounded-lg p-5'>
+        <p className='text-label text-fg-muted uppercase tracking-label mb-3'>
+          Your shield score
+        </p>
+        {/* Auth not built yet — sign-in prompt */}
+        <div className='text-center py-3'>
+          <p className='text-body-xs text-fg-muted leading-relaxed'>
+            Sign in to track your score and see how you rank against other
+            contributors.
+          </p>
+          <button
+            type='button'
+            className='mt-3 inline-flex items-center gap-2 bg-brand text-white px-4 py-2 rounded-md text-[12px] font-medium hover:bg-brand-dark transition-colors duration-150 cursor-pointer'
+          >
+            Sign in
+          </button>
+        </div>
+      </div>
+
+      {/* ── Researcher access ─────────────────────────────────────────── */}
+      <div
+        className='bg-canvas border border-stroke-faint rounded-lg p-5'
+        id='researchers'
+      >
+        <div className='flex items-center gap-1.5 mb-2'>
+          <IconCode size={13} className='text-fg-muted' aria-hidden='true' />
+          <p className='text-label text-fg-muted uppercase tracking-label'>
+            Researcher access
+          </p>
+        </div>
+        <p className='text-body-xs text-fg-muted leading-relaxed mb-3'>
+          Free API access for verified security researchers, NGOs, and
+          academics.
+        </p>
+        <div className='bg-canvas-subtle border border-stroke-faint rounded-md px-3 py-2.5 font-mono text-[11px] text-fg-muted mb-3 overflow-x-auto'>
+          GET /api/v1/reports?type=phishing&amp;country=NG&amp;limit=50
+        </div>
+        <button
+          type='button'
+          className='w-full text-[12px] px-3.5 py-1.5 border border-stroke rounded-md bg-transparent text-fg hover:bg-canvas-subtle transition-colors duration-150 cursor-pointer'
+        >
+          Request API key ↗
+        </button>
+      </div>
+    </>
+  );
+}
