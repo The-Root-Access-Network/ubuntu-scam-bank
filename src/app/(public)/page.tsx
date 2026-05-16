@@ -3,6 +3,7 @@
 import { IconUpload } from '@tabler/icons-react';
 import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
+import SubmissionForm from '@/components/forms/SubmissionForm';
 import { createClient } from '@/lib/supabase/server';
 
 async function getStats() {
@@ -41,12 +42,12 @@ export default async function HomePage() {
 
       {/* ── Hero ───────────────────────────────────────────────────────── */}
       <section className='bg-canvas-subtle border-b border-stroke-faint'>
-        <Container className='pt-8 md:pt-9 pb-6 md:pb-7 text-center'>
-          <h1 className='text-lg md:text-[20px] lg:text-[22px] font-medium text-fg mb-2'>
+        <Container className='pt-12 md:pt-16 lg:pt-20 pb-10 md:pb-14 text-center'>
+          <h1 className='text-display tracking-display text-fg mb-4'>
             Seen a scam? Report it. Protect someone.
           </h1>
 
-          <p className='text-[13px] md:text-[14px] text-fg-muted max-w-[90%] md:max-w-120 mx-auto mb-5 leading-relaxed'>
+          <p className='text-body-lg text-fg-muted max-w-[90%] md:max-w-180 mx-auto mb-5'>
             Upload phishing emails, fake texts, and fraud attempts. Earn points,
             climb the leaderboard, and help security researchers understand
             what&apos;s happening right now.
@@ -83,10 +84,30 @@ export default async function HomePage() {
         </Container>
       </section>
 
-      {/* ── Main content — added in subsequent steps ──────────────────── */}
+      {/* ── Main content ────────────────────────────────────────────────── */}
       <main id='report'>
         <Container className='py-4'>
-          {/* Submission form, feed, and sidebar follow here */}
+          {/*
+           * Two-column grid — left column grows, right sidebar is fixed 260px.
+           * Sidebar hidden below lg (1024px) — it populates in the next step.
+           * Left column stacks the form on top of the feed (also coming next).
+           */}
+          <div className='grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-3.5'>
+
+            {/* Left column */}
+            <div className='flex flex-col gap-3.5'>
+              <SubmissionForm />
+              {/* Feed section — coming next */}
+            </div>
+
+            {/* Right sidebar — hidden until populated */}
+            <aside className='hidden lg:flex flex-col gap-3.5'>
+              {/* Leaderboard card       — coming next */}
+              {/* Shield score card      — coming next */}
+              {/* Researcher access card — coming next */}
+            </aside>
+
+          </div>
         </Container>
       </main>
     </div>
