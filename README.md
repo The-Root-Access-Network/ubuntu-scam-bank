@@ -17,12 +17,12 @@
 
 ## 🛠️ Tech Stack
 
-| Layer           | Technology                                                      |
-| --------------- | --------------------------------------------------------------- |
-| Frontend        | [Next.js](https://nextjs.org/) + TypeScript                     |
-| Backend / API   | Next.js API Routes                                              |
-| Database & Auth | [Supabase](https://supabase.com/) (PostgreSQL + Auth + Storage) |
-| Deployment      | TBD                                                             |
+| Layer           | Technology                                                                                               |
+| --------------- | -------------------------------------------------------------------------------------------------------- |
+| Frontend        | [Next.js](https://nextjs.org/) + TypeScript                                                              |
+| Backend / API   | Next.js API Routes                                                                                       |
+| Database & Auth | [Supabase](https://supabase.com/) (PostgreSQL + Auth + Storage)                                          |
+| Deployment      | [Cloudflare Workers](https://workers.cloudflare.com/) via [OpenNext](https://opennext.js.org/cloudflare) |
 
 ---
 
@@ -65,6 +65,23 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Preview (Cloudflare Workers runtime)
+
+To test the app in the actual Cloudflare Workers runtime locally:
+
+```bash
+npm run preview
+```
+
+Open [http://localhost:8787](http://localhost:8787) in your browser.
+
+This is more accurate to production than `npm run dev` — use it before
+opening PRs or when testing API routes and middleware behaviour.
+
+### Live URL
+
+**_[https://ubuntu-scam-bank.therootaccessnetwork.workers.dev/](https://ubuntu-scam-bank.therootaccessnetwork.workers.dev/)_**
 
 ---
 
@@ -112,8 +129,11 @@ ubuntu-scam-bank/
 ├── .env.example                   # Committed — template with no real values
 ├── middleware.ts                  # Next.js middleware (Supabase session refresh)
 ├── next.config.ts
+├── open-next.config.ts
+├── tailwind.config.ts
 ├── tailwind.config.ts
 ├── tsconfig.json
+├── wrangler.jsonc
 └── package.json
 ```
 
