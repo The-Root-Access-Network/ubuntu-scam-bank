@@ -4,37 +4,64 @@ import { IconUpload } from '@tabler/icons-react';
 import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
 import SubmissionForm from '@/components/forms/SubmissionForm';
+import FeedSection from '@/components/feed/FeedSection';
+import Sidebar from '@/components/layout/Sidebar';
 import { createClient } from '@/lib/supabase/server';
 
-async function getStats() {
-  const supabase = await createClient();
+// All page data fetched in one parallel request set.
+// Components receive pre-fetched props — no waterfall, no client fetching.
+async function getPageData() {
+  const supabase = await createClient()
 
-  const [reportsResult, usersResult, countryResult] = await Promise.all([
+  const [
+    reportsCount,
+    usersCount,
+    countryResult,
+    feedResult,
+    leaderboardResult,
+  ] = await Promise.all([
     supabase
       .from('reports')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'published'),
-    supabase.from('users').select('*', { count: 'exact', head: true }),
+    supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true }),
     supabase
       .from('reports')
       .select('country_code')
       .eq('status', 'published')
       .not('country_code', 'is', null),
-  ]);
+    supabase
+      .from('reports')
+      .select('id, type, severity, country_code, summary, confirm_count, view_count, submitted_at')
+      .eq('status', 'published')
+      .order('submitted_at', { ascending: false })
+      .limit(20),
+    supabase
+      .from('users')
+      .select('id, username, points, badge, country_code')
+      .order('points', { ascending: false })
+      .limit(5),
+  ])
 
   const uniqueCountries = new Set(
-    countryResult.data?.map((r) => r.country_code) ?? [],
-  ).size;
+    countryResult.data?.map(r => r.country_code) ?? [],
+  ).size
 
   return {
-    reports: reportsResult.count ?? 0,
-    users: usersResult.count ?? 0,
-    countries: uniqueCountries,
-  };
+    stats: {
+      reports: reportsCount.count ?? 0,
+      users: usersCount.count ?? 0,
+      countries: uniqueCountries,
+    },
+    feedReports: feedResult.data ?? [],
+    topUsers: leaderboardResult.data ?? [],
+  }
 }
 
 export default async function HomePage() {
-  const stats = await getStats();
+  const { stats, feedReports, topUsers } = await getPageData();
 
   return (
     <div className='min-h-dvh bg-canvas-subtle'>
@@ -89,19 +116,20 @@ export default async function HomePage() {
         <Container className='py-4'>
           {/*
            * Two-column grid — left column grows, right sidebar is fixed 260px.
-           * Sidebar hidden below lg (1024px) — it populates in the next step.
-           * Left column stacks the form on top of the feed (also coming next).
+           * On mobile/tablet the sidebar is hidden — leaderboard and researcher
+           * access cards will get dedicated pages in Phase 2.
            */}
           <div className='grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-3.5'>
 
             {/* Left column */}
             <div className='flex flex-col gap-3.5'>
               <SubmissionForm />
-              {/* Feed section — coming next */}
+              <FeedSection reports={feedReports} />
             </div>
 
-            {/* Right sidebar — hidden until populated */}
+            {/* Right sidebar — desktop only */}
             <aside className='hidden lg:flex flex-col gap-3.5'>
+              <Sidebar topUsers={topUsers} />
               {/* Leaderboard card       — coming next */}
               {/* Shield score card      — coming next */}
               {/* Researcher access card — coming next */}
