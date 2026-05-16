@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import type { ReactNode } from 'react'
 
 interface ContainerProps {
-  children: ReactNode
+  children?: ReactNode  // optional — container may be empty during incremental builds
   className?: string
 }
 
