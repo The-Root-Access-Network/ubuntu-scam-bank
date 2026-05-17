@@ -57,7 +57,7 @@ export default function SubmissionForm() {
     SEVERITY_LEVELS.find((s) => s.level === severity)?.label ?? 'Low';
 
   function handleSubmit() {
-    // TODO: POST to /api/submit → triage pipeline wired in a later step
+    // TODO: POST to /api/submit → triage pipeline wired in Phase 2
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 5000);
   }
@@ -105,7 +105,7 @@ export default function SubmissionForm() {
           className='text-brand mx-auto mb-2'
           aria-hidden='true'
         />
-        <p className='text-[14px] font-medium text-fg'>
+        <p className='text-body-sm font-medium text-fg leading-relaxed'>
           Drag &amp; drop, paste, or tap to upload
         </p>
         <p className='text-body-xs text-fg-muted mt-1.5'>
@@ -128,7 +128,7 @@ export default function SubmissionForm() {
               type='button'
               onClick={() => setSelectedType(value)}
               className={[
-                'text-[12px] px-3 py-1 rounded-full border transition-all duration-150 cursor-pointer',
+                'text-[13px] px-3 py-1 rounded-full border transition-all duration-150 cursor-pointer',
                 selectedType === value
                   ? 'bg-brand-light text-brand-dark border-brand'
                   : 'bg-transparent text-fg-muted border-stroke hover:border-brand hover:bg-brand-light hover:text-brand-dark',
@@ -142,7 +142,7 @@ export default function SubmissionForm() {
 
       {/* Severity selector */}
       <div className='flex items-center gap-1.5 mt-3'>
-        <span className='text-[12px] text-fg-muted'>Severity:</span>
+        <span className='text-body-xs text-fg-muted'>Severity:</span>
         {SEVERITY_LEVELS.map(({ level, label, color }) => (
           <button
             key={level}
@@ -157,18 +157,18 @@ export default function SubmissionForm() {
             }}
           />
         ))}
-        <span className='text-[12px] text-fg-muted ml-1'>{severityLabel}</span>
+        <span className='text-body-xs text-fg-muted ml-1'>{severityLabel}</span>
       </div>
 
       {/* Country received in */}
-      <div className='flex items-center gap-2 text-[12px] text-fg-muted mt-2'>
+      <div className='flex items-center gap-2 text-body-xs text-fg-muted mt-2'>
         <IconMapPin size={14} aria-hidden='true' className='shrink-0' />
         <label htmlFor='country-select'>Country received in:</label>
         <select
           id='country-select'
           value={country}
           onChange={(e) => setCountry(e.target.value)}
-          className='text-[12px] border border-stroke rounded-md px-2 py-1 bg-canvas text-fg cursor-pointer'
+          className='text-body-xs border border-stroke rounded-md px-2 py-1 bg-canvas text-fg cursor-pointer'
         >
           {COUNTRIES.map((c) => (
             <option key={c} value={c}>
@@ -182,7 +182,7 @@ export default function SubmissionForm() {
       <div className='mt-3'>
         <label
           htmlFor='context'
-          className='text-[12px] text-fg-muted block mb-1'
+          className='text-label text-fg-muted block mb-1'
         >
           Add context (optional) — what made it look convincing?
         </label>
@@ -193,7 +193,7 @@ export default function SubmissionForm() {
           rows={3}
           placeholder='e.g. It claimed to be from HMRC, had my name on it, and had a real-looking gov.uk link...'
           className={[
-            'w-full border rounded-md px-2.5 py-2 text-[13px] resize-none',
+            'w-full border rounded-md px-2.5 py-2 text-body-sm resize-none',
             'bg-canvas text-fg placeholder:text-fg-subtle',
             'border-stroke focus:border-brand focus:outline-none',
             'transition-colors duration-150',
@@ -203,14 +203,14 @@ export default function SubmissionForm() {
 
       {/* Submit row */}
       <div className='flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between mt-3.5'>
-        <div className='flex items-center gap-1 text-[12px] text-brand'>
+        <div className='flex items-center gap-1 text-body-xs text-brand'>
           <IconStar size={14} aria-hidden='true' />
           +10 pts on submission
         </div>
         <button
           type='button'
           onClick={handleSubmit}
-          className='inline-flex items-center justify-center gap-2 bg-brand text-white px-5.5 py-2.5 rounded-md text-[14px] font-medium hover:bg-brand-dark transition-colors duration-150 cursor-pointer'
+          className='inline-flex items-center justify-center gap-2 bg-brand text-white px-5.5 py-2.5 rounded-md text-body-sm font-medium hover:bg-brand-dark transition-colors duration-150 cursor-pointer'
         >
           Submit report
           <IconArrowRight size={15} aria-hidden='true' />
@@ -225,7 +225,7 @@ export default function SubmissionForm() {
             className='text-brand-dark shrink-0 mt-0.5'
             aria-hidden='true'
           />
-          <p className='text-[13px] text-brand-dark'>
+          <p className='text-body-sm text-brand-dark'>
             Report submitted!{' '}
             <span className='font-medium'>
               +10 points added to your account.
