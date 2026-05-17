@@ -91,3 +91,71 @@ development. Informal — written for the next developer (or future me).
 
 - Added vertical padding to Container inside hero section rather than
   min-h — more predictable across content lengths
+
+---
+
+## 2026-05-17
+
+### Auth — Phase 2 Step 1
+
+**Google OAuth setup (Google Cloud Console):**
+
+- Created new GCP project, configured OAuth consent screen (External)
+- Created OAuth 2.0 Client ID (Web application type)
+- Authorised redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`
+- Client ID and Secret saved in Supabase dashboard → Authentication →
+  Providers → Google, and in .env.local for reference
+
+**Supabase configuration:**
+
+- Site URL: `https://ubuntu-scam-bank.therootaccessnetwork.workers.dev`
+- Redirect URLs: `live URL /auth/callback` + `http://localhost:3000/auth/callback`
+  (localhost entry required for Google OAuth to work in local dev)
+
+**Database trigger — auto-create users on first sign-in:**
+
+- Fires after insert on auth.users
+- Derives username from email prefix, sanitised + 4-char UUID suffix
+  for uniqueness, capped at 24 chars
+- Inserts into public.users with badge=watcher, points=0
+- on conflict (id) do nothing guards against duplicate trigger fires
+- security definer + search_path = public — standard safe pattern
+
+**RLS policies on users table:**
+
+- Two SELECT policies intentionally — Postgres ORs permissive policies,
+  so using (true) covers both anonymous (leaderboard) and authenticated reads
+- "Users can read own profile" is redundant given the permissive policy —
+  dropped it, leaving only "Leaderboard fields are publicly readable"
+- UPDATE policy restricts writes to row owner via auth.uid() = id
+- Email exposure mitigated at query layer — all public queries explicitly
+  select only id, username, points, badge, country_code, never email
+
+**Architecture decision — Nav client island pattern:**
+
+- Nav remains a server component
+- NavAuthButton extracted as a dedicated client island
+- Only the auth slice re-renders on state change — rest of Nav is static
+- Auth state hydrated via getUser() on mount, kept live via
+  onAuthStateChange subscription, cleaned up on unmount
+
+**Auth callback route:**
+
+- src/app/auth/callback/route.ts — exchanges OAuth code for session
+- On error, redirects home rather than showing an error page — safer
+  UX for non-technical users, failure surfaces as "not signed in" state
+
+**country_code and profile editing — deferred:**
+
+- country_code will be populated from first report submission or
+  a future profile settings page
+- Display name / proper initials deferred to Phase 3 profile feature
+- Email initials (first 2 chars) used as interim avatar — acceptable for MVP
+
+**Tested and verified:**
+
+- Google OAuth sign-in with two accounts — both successful
+- Email/password sign-up sends confirmation email
+- Trigger correctly inserted rows in public.users for all three test accounts
+- Nav avatar + sign out renders correctly after sign-in
+- Sign out returns nav to sign-in state

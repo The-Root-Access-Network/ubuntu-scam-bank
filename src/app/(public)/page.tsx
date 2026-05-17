@@ -74,7 +74,7 @@ export default async function HomePage() {
             Seen a scam? Report it. Protect someone.
           </h1>
 
-          <p className='text-body-lg text-fg-muted max-w-[90%] md:max-w-180 mx-auto mb-5'>
+          <p className='text-body-lg font-medium text-fg-muted max-w-[90%] md:max-w-180 mx-auto mb-5'>
             Upload phishing emails, fake texts, and fraud attempts. Earn points,
             climb the leaderboard, and help security researchers understand
             what&apos;s happening right now.
@@ -102,7 +102,7 @@ export default async function HomePage() {
                 <div className='text-base md:text-[20px] font-medium text-brand'>
                   {value.toLocaleString()}
                 </div>
-                <div className='text-[10px] md:text-[11px] text-fg-muted mt-0.5'>
+                <div className='text-[11px] md:text-[12px] text-fg-muted mt-0.5'>
                   {label}
                 </div>
               </div>
@@ -130,9 +130,9 @@ export default async function HomePage() {
             {/* Right sidebar — desktop only */}
             <aside className='hidden lg:flex flex-col gap-3.5'>
               <Sidebar topUsers={topUsers} />
-              {/* Leaderboard card       — coming next */}
-              {/* Shield score card      — coming next */}
-              {/* Researcher access card — coming next */}
+              {/* Leaderboard card */}
+              {/* Shield score card */}
+              {/* Researcher access card */}
             </aside>
 
           </div>
