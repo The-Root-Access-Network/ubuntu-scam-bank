@@ -1,0 +1,772 @@
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0
+  }
+
+  .sv-wrap {
+    font-size: 14px;
+    color: var(--color-text-primary);
+    padding-bottom: 2rem
+  }
+
+  .sv-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    background: var(--color-background-primary)
+  }
+
+  .sv-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 500
+  }
+
+  .sv-logo-icon {
+    width: 28px;
+    height: 28px;
+    background: #0F6E56;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 14px
+  }
+
+  .sv-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--color-text-secondary)
+  }
+
+  .sv-nav-links span {
+    cursor: pointer
+  }
+
+  .sv-nav-links span:hover {
+    color: var(--color-text-primary)
+  }
+
+  .sv-btn-sm {
+    font-size: 12px;
+    padding: 6px 14px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    background: transparent;
+    cursor: pointer;
+    color: var(--color-text-primary)
+  }
+
+  .sv-btn-primary {
+    background: #0F6E56;
+    color: #fff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: var(--border-radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px
+  }
+
+  .sv-hero {
+    background: var(--color-background-secondary);
+    padding: 36px 20px 28px;
+    text-align: center;
+    border-bottom: 0.5px solid var(--color-border-tertiary)
+  }
+
+  .sv-hero h1 {
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 8px
+  }
+
+  .sv-hero p {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    max-width: 480px;
+    margin: 0 auto 20px;
+    line-height: 1.6
+  }
+
+  .sv-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 420px;
+    margin: 20px auto 0
+  }
+
+  .sv-stat {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 12px;
+    text-align: center
+  }
+
+  .sv-stat-n {
+    font-size: 20px;
+    font-weight: 500;
+    color: #0F6E56
+  }
+
+  .sv-stat-l {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-top: 2px
+  }
+
+  .sv-main {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 16px;
+    padding: 16px 20px
+  }
+
+  .sv-card {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 16px
+  }
+
+  .sv-card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: .04em
+  }
+
+  .sv-upload-zone {
+    border: 1.5px dashed var(--color-border-secondary);
+    border-radius: var(--border-radius-lg);
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: background .15s
+  }
+
+  .sv-upload-zone:hover {
+    background: var(--color-background-secondary)
+  }
+
+  .sv-upload-icon {
+    font-size: 28px;
+    color: #0F6E56;
+    margin-bottom: 8px
+  }
+
+  .sv-upload-zone p {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-top: 6px
+  }
+
+  .sv-types {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 14px 0
+  }
+
+  .sv-type-btn {
+    font-size: 12px;
+    padding: 5px 12px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 20px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--color-text-secondary);
+    transition: all .15s
+  }
+
+  .sv-type-btn.active,
+  .sv-type-btn:hover {
+    border-color: #0F6E56;
+    background: #E1F5EE;
+    color: #085041
+  }
+
+  .sv-input-group {
+    margin-top: 12px
+  }
+
+  .sv-input-group label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    display: block;
+    margin-bottom: 4px
+  }
+
+  .sv-input-group textarea {
+    width: 100%;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 8px 10px;
+    font-size: 13px;
+    resize: none;
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    height: 80px
+  }
+
+  .sv-submit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px
+  }
+
+  .sv-pts-preview {
+    font-size: 12px;
+    color: #0F6E56;
+    display: flex;
+    align-items: center;
+    gap: 4px
+  }
+
+  .sv-feed-item {
+    padding: 12px 0;
+    border-bottom: 0.5px solid var(--color-border-tertiary)
+  }
+
+  .sv-feed-item:last-child {
+    border-bottom: none
+  }
+
+  .sv-feed-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px
+  }
+
+  .sv-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-weight: 500
+  }
+
+  .sv-badge.phishing {
+    background: #E1F5EE;
+    color: #085041
+  }
+
+  .sv-badge.smishing {
+    background: #E6F1FB;
+    color: #0C447C
+  }
+
+  .sv-badge.fraud {
+    background: #FAEEDA;
+    color: #633806
+  }
+
+  .sv-badge.bec {
+    background: #FAECE7;
+    color: #712B13
+  }
+
+  .sv-feed-time {
+    font-size: 11px;
+    color: var(--color-text-tertiary)
+  }
+
+  .sv-feed-text {
+    font-size: 13px;
+    color: var(--color-text-primary);
+    line-height: 1.5;
+    margin-bottom: 4px
+  }
+
+  .sv-feed-meta {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    display: flex;
+    gap: 12px
+  }
+
+  .sv-lb-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 0.5px solid var(--color-border-tertiary)
+  }
+
+  .sv-lb-item:last-child {
+    border-bottom: none
+  }
+
+  .sv-lb-rank {
+    font-size: 13px;
+    font-weight: 500;
+    width: 20px;
+    color: var(--color-text-secondary)
+  }
+
+  .sv-lb-rank.gold {
+    color: #BA7517
+  }
+
+  .sv-lb-rank.silver {
+    color: #888780
+  }
+
+  .sv-lb-rank.bronze {
+    color: #993C1D
+  }
+
+  .sv-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #E1F5EE;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: #085041;
+    flex-shrink: 0
+  }
+
+  .sv-lb-info {
+    flex: 1
+  }
+
+  .sv-lb-name {
+    font-size: 13px;
+    font-weight: 500
+  }
+
+  .sv-lb-sub {
+    font-size: 11px;
+    color: var(--color-text-secondary)
+  }
+
+  .sv-lb-pts {
+    font-size: 13px;
+    font-weight: 500;
+    color: #0F6E56
+  }
+
+  .sv-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px
+  }
+
+  .sv-tab {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    background: transparent;
+    border: 0.5px solid transparent;
+    color: var(--color-text-secondary)
+  }
+
+  .sv-tab.active {
+    background: var(--color-background-secondary);
+    border-color: var(--color-border-secondary);
+    color: var(--color-text-primary)
+  }
+
+  .sv-severity {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    align-items: center
+  }
+
+  .sv-severity label {
+    font-size: 12px;
+    color: var(--color-text-secondary)
+  }
+
+  .sv-sev-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1.5px solid transparent
+  }
+
+  .sv-sev-dot[data-s="1"] {
+    background: #C0DD97
+  }
+
+  .sv-sev-dot[data-s="2"] {
+    background: #EF9F27
+  }
+
+  .sv-sev-dot[data-s="3"] {
+    background: #D85A30
+  }
+
+  .sv-sev-dot[data-s="4"] {
+    background: #E24B4A
+  }
+
+  .sv-sev-dot[data-s="5"] {
+    background: #A32D2D
+  }
+
+  .sv-sev-dot.sel {
+    border-color: var(--color-text-primary)
+  }
+
+  .sv-country-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-top: 8px
+  }
+
+  .sv-country-row select {
+    font-size: 12px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 4px 8px;
+    background: var(--color-background-primary);
+    color: var(--color-text-primary)
+  }
+
+  .sv-success-banner {
+    background: #E1F5EE;
+    border: 0.5px solid #5DCAA5;
+    border-radius: var(--border-radius-md);
+    padding: 12px 14px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px
+  }
+
+  .sv-success-banner.show {
+    display: flex
+  }
+
+  .sv-success-banner i {
+    color: #085041;
+    font-size: 18px
+  }
+
+  .sv-success-text {
+    font-size: 13px;
+    color: #085041
+  }
+
+  .sv-success-pts {
+    font-weight: 500
+  }
+</style>
+
+<div class="sv-wrap">
+  <h2 class="sr-only">ScamVault — crowdsourced scam intelligence platform MVP mockup</h2>
+
+  <div class="sv-nav">
+    <div class="sv-logo">
+      <div class="sv-logo-icon"><i class="ti ti-shield-check" aria-hidden="true"></i></div>
+      ScamVault
+      <span
+        style="font-size:11px;padding:2px 8px;background:#E1F5EE;color:#085041;border-radius:20px;font-weight:400">by
+        Ubuntu Bridge</span>
+    </div>
+    <div class="sv-nav-links">
+      <span>Feed</span>
+      <span>Leaderboard</span>
+      <span>For researchers</span>
+      <button class="sv-btn-sm">Sign in</button>
+    </div>
+  </div>
+
+  <div class="sv-hero">
+    <h1>Seen a scam? Report it. Protect someone.</h1>
+    <p>Upload phishing emails, fake texts, and fraud attempts. Earn points, climb the leaderboard, and help security
+      researchers understand what's happening right now.</p>
+    <button class="sv-btn-primary"
+      onclick="document.getElementById('upload-section').scrollIntoView({behavior:'smooth'})">
+      <i class="ti ti-upload" aria-hidden="true"></i> Report a scam
+    </button>
+    <div class="sv-stats">
+      <div class="sv-stat">
+        <div class="sv-stat-n" id="stat-reports">14,382</div>
+        <div class="sv-stat-l">scams reported</div>
+      </div>
+      <div class="sv-stat">
+        <div class="sv-stat-n" id="stat-users">3,241</div>
+        <div class="sv-stat-l">contributors</div>
+      </div>
+      <div class="sv-stat">
+        <div class="sv-stat-n" id="stat-countries">67</div>
+        <div class="sv-stat-l">countries</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sv-main">
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <div class="sv-card" id="upload-section">
+        <div class="sv-card-title">Report a scam</div>
+
+        <div class="sv-upload-zone" onclick="triggerUpload()" id="dropzone">
+          <div class="sv-upload-icon"><i class="ti ti-cloud-upload" aria-hidden="true"></i></div>
+          <div style="font-size:14px;font-weight:500">Drag &amp; drop, paste, or tap to upload</div>
+          <p>Screenshot · Email file (.eml) · Text message · Document</p>
+          <p style="margin-top:4px;font-size:11px;color:var(--color-text-tertiary)">Your personal info is automatically
+            removed before storing</p>
+        </div>
+
+        <div style="margin-top:14px">
+          <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px">What type of scam is this?
+          </div>
+          <div class="sv-types">
+            <button class="sv-type-btn active" onclick="selectType(this)">Phishing email</button>
+            <button class="sv-type-btn" onclick="selectType(this)">Smishing (text)</button>
+            <button class="sv-type-btn" onclick="selectType(this)">Investment fraud</button>
+            <button class="sv-type-btn" onclick="selectType(this)">Romance scam</button>
+            <button class="sv-type-btn" onclick="selectType(this)">Tech support</button>
+            <button class="sv-type-btn" onclick="selectType(this)">Business email</button>
+            <button class="sv-type-btn" onclick="selectType(this)">Other</button>
+          </div>
+        </div>
+
+        <div class="sv-severity">
+          <label>Severity:</label>
+          <div class="sv-sev-dot sel" data-s="1" onclick="setSev(this)" title="Low"></div>
+          <div class="sv-sev-dot" data-s="2" onclick="setSev(this)" title="Mild"></div>
+          <div class="sv-sev-dot" data-s="3" onclick="setSev(this)" title="Moderate"></div>
+          <div class="sv-sev-dot" data-s="4" onclick="setSev(this)" title="High"></div>
+          <div class="sv-sev-dot" data-s="5" onclick="setSev(this)" title="Critical"></div>
+          <span id="sev-label" style="font-size:12px;color:var(--color-text-secondary);margin-left:4px">Low</span>
+        </div>
+
+        <div class="sv-country-row">
+          <i class="ti ti-map-pin" style="font-size:14px" aria-hidden="true"></i>
+          <label>Country received in:</label>
+          <select id="country-sel">
+            <option>United Kingdom</option>
+            <option>Nigeria</option>
+            <option>United States</option>
+            <option>Ghana</option>
+            <option>South Africa</option>
+            <option>Kenya</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="sv-input-group">
+          <label>Add context (optional) — what made it look convincing?</label>
+          <textarea
+            placeholder="e.g. It claimed to be from HMRC, had my name on it, and had a real-looking gov.uk link..."></textarea>
+        </div>
+
+        <div class="sv-submit-row">
+          <div class="sv-pts-preview"><i class="ti ti-star" style="font-size:14px" aria-hidden="true"></i> +10 pts on
+            submission</div>
+          <button class="sv-btn-primary" onclick="submitReport()">
+            Submit report <i class="ti ti-arrow-right" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div class="sv-success-banner" id="success-banner">
+          <i class="ti ti-circle-check" aria-hidden="true"></i>
+          <div class="sv-success-text">Report submitted! <span class="sv-success-pts">+10 points added to your
+              account.</span> Thank you for helping protect others.</div>
+        </div>
+      </div>
+
+      <div class="sv-card">
+        <div class="sv-card-title">Latest reports</div>
+        <div class="sv-tabs">
+          <div class="sv-tab active">All</div>
+          <div class="sv-tab">Phishing</div>
+          <div class="sv-tab">Smishing</div>
+          <div class="sv-tab">Fraud</div>
+        </div>
+        <div id="feed">
+          <div class="sv-feed-item">
+            <div class="sv-feed-top"><span class="sv-badge phishing">Phishing email</span><span class="sv-feed-time">2
+                min ago · UK</span></div>
+            <div class="sv-feed-text">Fake HMRC tax refund email with gov.uk lookalike domain, requesting bank details
+              via embedded form.</div>
+            <div class="sv-feed-meta"><span><i class="ti ti-eye" style="font-size:12px" aria-hidden="true"></i> 34
+                views</span><span><i class="ti ti-check" style="font-size:12px" aria-hidden="true"></i> 12
+                confirmed</span><span>Severity: High</span></div>
+          </div>
+          <div class="sv-feed-item">
+            <div class="sv-feed-top"><span class="sv-badge smishing">Smishing</span><span class="sv-feed-time">18 min
+                ago · Nigeria</span></div>
+            <div class="sv-feed-text">SMS claiming to be Access Bank, urgent account verification link resolves to
+              data-harvesting page.</div>
+            <div class="sv-feed-meta"><span><i class="ti ti-eye" style="font-size:12px" aria-hidden="true"></i> 21
+                views</span><span><i class="ti ti-check" style="font-size:12px" aria-hidden="true"></i> 8
+                confirmed</span><span>Severity: Moderate</span></div>
+          </div>
+          <div class="sv-feed-item">
+            <div class="sv-feed-top"><span class="sv-badge fraud">Investment fraud</span><span class="sv-feed-time">1 hr
+                ago · Ghana</span></div>
+            <div class="sv-feed-text">WhatsApp group pushing crypto trading platform promising 40% weekly returns,
+              requests initial deposit via mobile money.</div>
+            <div class="sv-feed-meta"><span><i class="ti ti-eye" style="font-size:12px" aria-hidden="true"></i> 57
+                views</span><span><i class="ti ti-check" style="font-size:12px" aria-hidden="true"></i> 29
+                confirmed</span><span>Severity: High</span></div>
+          </div>
+          <div class="sv-feed-item">
+            <div class="sv-feed-top"><span class="sv-badge bec">Business email</span><span class="sv-feed-time">3 hrs
+                ago · UK</span></div>
+            <div class="sv-feed-text">CEO impersonation email requesting urgent wire transfer to new supplier account,
+              sent from lookalike domain.</div>
+            <div class="sv-feed-meta"><span><i class="ti ti-eye" style="font-size:12px" aria-hidden="true"></i> 19
+                views</span><span><i class="ti ti-check" style="font-size:12px" aria-hidden="true"></i> 6
+                confirmed</span><span>Severity: Critical</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <div class="sv-card">
+        <div class="sv-card-title"><i class="ti ti-trophy" style="font-size:14px;margin-right:4px"
+            aria-hidden="true"></i>Leaderboard</div>
+        <div class="sv-tabs">
+          <div class="sv-tab active">Global</div>
+          <div class="sv-tab">UK</div>
+          <div class="sv-tab">NG</div>
+        </div>
+        <div class="sv-lb-item">
+          <div class="sv-lb-rank gold">1</div>
+          <div class="sv-avatar">AO</div>
+          <div class="sv-lb-info">
+            <div class="sv-lb-name">AdekunleO</div>
+            <div class="sv-lb-sub">Elite Sentinel · Nigeria</div>
+          </div>
+          <div class="sv-lb-pts">4,820</div>
+        </div>
+        <div class="sv-lb-item">
+          <div class="sv-lb-rank silver">2</div>
+          <div class="sv-avatar" style="background:#E6F1FB;color:#0C447C">SK</div>
+          <div class="sv-lb-info">
+            <div class="sv-lb-name">SafeKeeper_UK</div>
+            <div class="sv-lb-sub">Sentinel · UK</div>
+          </div>
+          <div class="sv-lb-pts">3,210</div>
+        </div>
+        <div class="sv-lb-item">
+          <div class="sv-lb-rank bronze">3</div>
+          <div class="sv-avatar" style="background:#FAEEDA;color:#633806">KA</div>
+          <div class="sv-lb-info">
+            <div class="sv-lb-name">KojoAlert</div>
+            <div class="sv-lb-sub">Guardian · Ghana</div>
+          </div>
+          <div class="sv-lb-pts">2,650</div>
+        </div>
+        <div class="sv-lb-item">
+          <div class="sv-lb-rank">4</div>
+          <div class="sv-avatar" style="background:#FAECE7;color:#712B13">NJ</div>
+          <div class="sv-lb-info">
+            <div class="sv-lb-name">NetJustice</div>
+            <div class="sv-lb-sub">Guardian · South Africa</div>
+          </div>
+          <div class="sv-lb-pts">1,990</div>
+        </div>
+        <div class="sv-lb-item">
+          <div class="sv-lb-rank">5</div>
+          <div class="sv-avatar" style="background:#EEEDFE;color:#3C3489">QO</div>
+          <div class="sv-lb-info">
+            <div class="sv-lb-name">QuadriO</div>
+            <div class="sv-lb-sub">Guardian · UK</div>
+          </div>
+          <div class="sv-lb-pts">1,240</div>
+        </div>
+        <div style="margin-top:10px;text-align:center">
+          <button class="sv-btn-sm"
+            onclick="sendPrompt('Show me how the full leaderboard and badge tier system works ↗')">View full leaderboard
+            ↗</button>
+        </div>
+      </div>
+
+      <div class="sv-card">
+        <div class="sv-card-title">Your shield score</div>
+        <div style="text-align:center;padding:12px 0">
+          <div style="font-size:32px;font-weight:500;color:#0F6E56">1,240</div>
+          <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">points · Guardian rank</div>
+          <div
+            style="margin:12px auto;width:80%;background:var(--color-background-secondary);border-radius:20px;height:6px;overflow:hidden">
+            <div style="width:62%;height:100%;background:#0F6E56;border-radius:20px"></div>
+          </div>
+          <div style="font-size:11px;color:var(--color-text-secondary)">760 pts to Sentinel</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+          <div class="sv-stat">
+            <div class="sv-stat-n">47</div>
+            <div class="sv-stat-l">reports</div>
+          </div>
+          <div class="sv-stat">
+            <div class="sv-stat-n">89%</div>
+            <div class="sv-stat-l">verified rate</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sv-card">
+        <div class="sv-card-title"><i class="ti ti-code" style="font-size:13px;margin-right:4px"
+            aria-hidden="true"></i>Researcher access</div>
+        <p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:12px">Free API access
+          for verified security researchers, NGOs, and academics.</p>
+        <div
+          style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px;font-family:var(--font-mono);font-size:11px;color:var(--color-text-secondary);margin-bottom:12px">
+          GET /api/v1/reports?type=phishing&country=NG&limit=50</div>
+        <button class="sv-btn-sm" style="width:100%"
+          onclick="sendPrompt('Tell me more about the researcher API and STIX export format ↗')">Request API key
+          ↗</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function selectType(btn) {
+    document.querySelectorAll('.sv-type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  const sevLabels = ['', 'Low', 'Mild', 'Moderate', 'High', 'Critical'];
+  function setSev(dot) {
+    document.querySelectorAll('.sv-sev-dot').forEach(d => d.classList.remove('sel'));
+    dot.classList.add('sel');
+    document.getElementById('sev-label').textContent = sevLabels[dot.dataset.s];
+  }
+  function triggerUpload() {
+    const dz = document.getElementById('dropzone');
+    dz.style.background = 'var(--color-background-secondary)';
+    setTimeout(() => dz.style.background = '', 400);
+  }
+  function submitReport() {
+    const b = document.getElementById('success-banner');
+    b.classList.add('show');
+    document.getElementById('stat-reports').textContent = (14383).toLocaleString();
+    setTimeout(() => b.classList.remove('show'), 5000);
+  }
+</script>

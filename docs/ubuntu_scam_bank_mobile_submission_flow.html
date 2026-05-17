@@ -1,0 +1,578 @@
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0
+  }
+
+  .mob-wrap {
+    padding: 1rem 0 2rem;
+    color: var(--color-text-primary)
+  }
+
+  .steps-row {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: flex-start
+  }
+
+  .phone-frame {
+    width: 160px;
+    flex-shrink: 0
+  }
+
+  .phone {
+    width: 160px;
+    min-height: 300px;
+    border: 2px solid var(--color-border-primary);
+    border-radius: 24px;
+    background: var(--color-background-primary);
+    overflow: hidden;
+    position: relative
+  }
+
+  .phone-notch {
+    width: 60px;
+    height: 14px;
+    background: var(--color-border-primary);
+    border-radius: 0 0 10px 10px;
+    margin: 0 auto
+  }
+
+  .phone-screen {
+    padding: 10px 10px 14px
+  }
+
+  .step-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: .05em
+  }
+
+  .step-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #0F6E56;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 6px
+  }
+
+  .arrow-col {
+    display: flex;
+    align-items: center;
+    padding-top: 60px;
+    color: var(--color-text-tertiary);
+    font-size: 18px
+  }
+
+  .pbar {
+    height: 3px;
+    background: var(--color-background-secondary);
+    border-radius: 2px;
+    margin-bottom: 10px;
+    overflow: hidden
+  }
+
+  .pbar-fill {
+    height: 100%;
+    background: #0F6E56;
+    border-radius: 2px
+  }
+
+  .ph-title {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--color-text-primary)
+  }
+
+  .ph-sub {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-bottom: 10px;
+    line-height: 1.5
+  }
+
+  .upload-zone-sm {
+    border: 1.5px dashed var(--color-border-secondary);
+    border-radius: 10px;
+    padding: 14px 8px;
+    text-align: center;
+    margin-bottom: 8px
+  }
+
+  .upload-zone-sm i {
+    font-size: 22px;
+    color: #0F6E56;
+    display: block;
+    margin-bottom: 4px
+  }
+
+  .upload-zone-sm span {
+    font-size: 11px;
+    color: var(--color-text-secondary)
+  }
+
+  .type-chip {
+    display: inline-block;
+    font-size: 10px;
+    padding: 3px 8px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 20px;
+    margin: 2px;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    background: transparent
+  }
+
+  .type-chip.sel {
+    background: #0F6E56;
+    color: #fff;
+    border-color: #0F6E56
+  }
+
+  .ai-card {
+    background: #E1F5EE;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 8px
+  }
+
+  .ai-label {
+    font-size: 10px;
+    color: #085041;
+    font-weight: 500;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px
+  }
+
+  .ai-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3px
+  }
+
+  .ai-key {
+    font-size: 10px;
+    color: #085041
+  }
+
+  .ai-val {
+    font-size: 10px;
+    font-weight: 500;
+    color: #085041
+  }
+
+  .ioc-pill {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: #9FE1CB;
+    color: #04342C;
+    margin: 2px
+  }
+
+  .sev-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px
+  }
+
+  .sev-dot-sm {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center
+  }
+
+  .sev-dot-sm.s1 {
+    background: #C0DD97
+  }
+
+  .sev-dot-sm.s2 {
+    background: #EF9F27
+  }
+
+  .sev-dot-sm.s3 {
+    background: #D85A30
+  }
+
+  .sev-dot-sm.s4 {
+    background: #E24B4A
+  }
+
+  .sev-dot-sm.s5 {
+    background: #A32D2D
+  }
+
+  .sev-dot-sm.sel {
+    border-color: var(--color-text-primary)
+  }
+
+  .ph-input {
+    width: 100%;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 11px;
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    resize: none
+  }
+
+  .mob-btn {
+    width: 100%;
+    padding: 9px;
+    background: #0F6E56;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 6px
+  }
+
+  .mob-btn-ghost {
+    width: 100%;
+    padding: 8px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 10px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 4px
+  }
+
+  .success-screen {
+    text-align: center;
+    padding: 10px 4px
+  }
+
+  .pts-burst {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #E1F5EE;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px
+  }
+
+  .pts-n {
+    font-size: 16px;
+    font-weight: 500;
+    color: #0F6E56
+  }
+
+  .pts-l {
+    font-size: 9px;
+    color: #0F6E56
+  }
+
+  .success-title {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 4px
+  }
+
+  .success-sub {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    margin-bottom: 10px
+  }
+
+  .rank-bar {
+    background: var(--color-background-secondary);
+    border-radius: 4px;
+    height: 5px;
+    overflow: hidden;
+    margin-bottom: 4px
+  }
+
+  .rank-fill {
+    height: 100%;
+    background: #0F6E56;
+    border-radius: 4px;
+    width: 62%
+  }
+
+  .share-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px
+  }
+
+  .share-btn {
+    flex: 1;
+    padding: 7px 4px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 8px;
+    font-size: 10px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+    background: transparent
+  }
+
+  .forward-tip {
+    background: var(--color-background-secondary);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    display: flex;
+    gap: 6px;
+    align-items: flex-start
+  }
+
+  .prog-dots {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    margin: 6px 0 10px
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-border-secondary)
+  }
+
+  .dot.on {
+    background: #0F6E56
+  }
+</style>
+
+<div class="mob-wrap">
+  <h2 class="sr-only">ScamVault mobile submission flow — four-screen walkthrough</h2>
+
+  <div style="text-align:center;margin-bottom:20px">
+    <p style="font-size:13px;color:var(--color-text-secondary)">Four screens. Under 60 seconds. No technical knowledge
+      needed.</p>
+  </div>
+
+  <div class="steps-row">
+
+    <div class="phone-frame">
+      <div class="step-num">1</div>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="pbar">
+            <div class="pbar-fill" style="width:25%"></div>
+          </div>
+          <div class="ph-title">Got a scam?</div>
+          <div class="ph-sub">Upload it here — paste, take a screenshot, or share from your email app.</div>
+          <div class="upload-zone-sm">
+            <i class="ti ti-cloud-upload" aria-hidden="true"></i>
+            <span>Tap to upload or<br>paste text below</span>
+          </div>
+          <textarea class="ph-input" rows="3" placeholder="Or paste the scam message here..."></textarea>
+          <div class="mob-btn" style="margin-top:8px"><i class="ti ti-arrow-right" aria-hidden="true"
+              style="font-size:14px"></i> Next</div>
+          <div class="forward-tip"><i class="ti ti-info-circle" aria-hidden="true"
+              style="font-size:14px;color:#0F6E56;flex-shrink:0;margin-top:1px"></i>Tip: on iOS or Android, tap "Share"
+            in your email app and select ScamVault to report in one tap.</div>
+        </div>
+      </div>
+      <div class="step-label">Upload</div>
+    </div>
+
+    <div class="arrow-col"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+
+    <div class="phone-frame">
+      <div class="step-num">2</div>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="pbar">
+            <div class="pbar-fill" style="width:50%"></div>
+          </div>
+          <div class="ph-title">AI detected</div>
+          <div class="ai-card">
+            <div class="ai-label"><i class="ti ti-sparkles" aria-hidden="true" style="font-size:11px"></i>
+              Auto-classified</div>
+            <div class="ai-row"><span class="ai-key">Type</span><span class="ai-val">Phishing email</span></div>
+            <div class="ai-row"><span class="ai-key">Severity</span><span class="ai-val">High (4/5)</span></div>
+            <div class="ai-row"><span class="ai-key">Confidence</span><span class="ai-val">94%</span></div>
+            <div style="margin-top:5px;font-size:10px;color:#085041">IOCs found:</div>
+            <div style="margin-top:3px">
+              <span class="ioc-pill">accessbank-secure.net</span>
+              <span class="ioc-pill">noreply@accessbank-secure.net</span>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:5px">Not right? Change type:</div>
+          <div>
+            <span class="type-chip sel">Phishing</span>
+            <span class="type-chip">Smishing</span>
+            <span class="type-chip">Fraud</span>
+            <span class="type-chip">Romance</span>
+            <span class="type-chip">Other</span>
+          </div>
+          <div style="font-size:11px;color:var(--color-text-secondary);margin:7px 0 4px">Severity:</div>
+          <div class="sev-row">
+            <div class="sev-dot-sm s1"></div>
+            <div class="sev-dot-sm s2"></div>
+            <div class="sev-dot-sm s3"></div>
+            <div class="sev-dot-sm s4 sel"></div>
+            <div class="sev-dot-sm s5"></div>
+            <span style="font-size:10px;color:var(--color-text-secondary);margin-left:4px">High</span>
+          </div>
+          <div class="mob-btn"><i class="ti ti-arrow-right" aria-hidden="true" style="font-size:14px"></i> Looks right
+          </div>
+          <div class="mob-btn-ghost">Edit details</div>
+        </div>
+      </div>
+      <div class="step-label">AI review</div>
+    </div>
+
+    <div class="arrow-col"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+
+    <div class="phone-frame">
+      <div class="step-num">3</div>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="pbar">
+            <div class="pbar-fill" style="width:75%"></div>
+          </div>
+          <div class="ph-title">Add context</div>
+          <div class="ph-sub">Optional — what made it convincing?</div>
+          <textarea class="ph-input" rows="3" placeholder="e.g. It had my name and account number on it..."></textarea>
+          <div style="font-size:11px;color:var(--color-text-secondary);margin:8px 0 4px">Where did you receive it?</div>
+          <div>
+            <span class="type-chip sel">Email</span>
+            <span class="type-chip">WhatsApp</span>
+            <span class="type-chip">SMS</span>
+            <span class="type-chip">Phone call</span>
+            <span class="type-chip">Social media</span>
+          </div>
+          <div style="font-size:11px;color:var(--color-text-secondary);margin:8px 0 4px">Country received in:</div>
+          <select
+            style="width:100%;font-size:11px;padding:6px 8px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-primary);color:var(--color-text-primary)">
+            <option>United Kingdom</option>
+            <option>Nigeria</option>
+            <option>Ghana</option>
+          </select>
+          <div class="mob-btn" style="margin-top:10px">
+            <i class="ti ti-shield-check" aria-hidden="true" style="font-size:14px"></i> Submit report
+          </div>
+          <div style="font-size:10px;color:var(--color-text-tertiary);text-align:center;margin-top:6px">Your personal
+            info is never stored</div>
+        </div>
+      </div>
+      <div class="step-label">Context</div>
+    </div>
+
+    <div class="arrow-col"><i class="ti ti-chevron-right" aria-hidden="true"></i></div>
+
+    <div class="phone-frame">
+      <div class="step-num">4</div>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="pbar">
+            <div class="pbar-fill" style="width:100%"></div>
+          </div>
+          <div class="success-screen">
+            <div class="pts-burst">
+              <div class="pts-n">+40</div>
+              <div class="pts-l">points</div>
+            </div>
+            <div class="success-title">Report submitted!</div>
+            <div class="success-sub">High severity + novel campaign bonus. You're helping protect thousands of people.
+            </div>
+            <div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:3px;text-align:left">Guardian →
+              Sentinel</div>
+            <div class="rank-bar">
+              <div class="rank-fill"></div>
+            </div>
+            <div style="font-size:10px;color:var(--color-text-secondary);text-align:right">1,240 / 2,000 pts</div>
+            <div style="margin-top:10px;font-size:11px;font-weight:500;margin-bottom:4px">Tell others about ScamVault
+            </div>
+            <div class="share-row">
+              <div class="share-btn"><i class="ti ti-brand-whatsapp" aria-hidden="true"
+                  style="font-size:14px;display:block;margin:0 auto 2px"></i>WhatsApp</div>
+              <div class="share-btn"><i class="ti ti-brand-twitter" aria-hidden="true"
+                  style="font-size:14px;display:block;margin:0 auto 2px"></i>X</div>
+              <div class="share-btn"><i class="ti ti-link" aria-hidden="true"
+                  style="font-size:14px;display:block;margin:0 auto 2px"></i>Copy link</div>
+            </div>
+            <div class="mob-btn"
+              style="margin-top:10px;background:transparent;color:#0F6E56;border:0.5px solid #0F6E56">
+              <i class="ti ti-home" aria-hidden="true" style="font-size:13px"></i> Back to feed
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-label">Done</div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px">
+    <div
+      style="background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:14px;text-align:center">
+      <i class="ti ti-share" aria-hidden="true"
+        style="font-size:20px;color:#0F6E56;display:block;margin-bottom:6px"></i>
+      <div style="font-size:13px;font-weight:500;margin-bottom:3px">Share extension</div>
+      <div style="font-size:12px;color:var(--color-text-secondary)">Forward directly from Gmail, Outlook or any email
+        app — one tap to report</div>
+    </div>
+    <div
+      style="background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:14px;text-align:center">
+      <i class="ti ti-sparkles" aria-hidden="true"
+        style="font-size:20px;color:#0F6E56;display:block;margin-bottom:6px"></i>
+      <div style="font-size:13px;font-weight:500;margin-bottom:3px">AI does the work</div>
+      <div style="font-size:12px;color:var(--color-text-secondary)">Auto-classifies type, severity and extracts attacker
+        indicators — no jargon needed</div>
+    </div>
+    <div
+      style="background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:14px;text-align:center">
+      <i class="ti ti-lock" aria-hidden="true" style="font-size:20px;color:#0F6E56;display:block;margin-bottom:6px"></i>
+      <div style="font-size:13px;font-weight:500;margin-bottom:3px">Privacy first</div>
+      <div style="font-size:12px;color:var(--color-text-secondary)">Your name, email and phone are stripped before
+        anything is stored or shared</div>
+    </div>
+    <div
+      style="background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:14px;text-align:center">
+      <i class="ti ti-trophy" aria-hidden="true"
+        style="font-size:20px;color:#0F6E56;display:block;margin-bottom:6px"></i>
+      <div style="font-size:13px;font-weight:500;margin-bottom:3px">Instant reward</div>
+      <div style="font-size:12px;color:var(--color-text-secondary)">Points appear on screen within 3 seconds — no
+        waiting for moderation approval</div>
+    </div>
+  </div>
+</div>

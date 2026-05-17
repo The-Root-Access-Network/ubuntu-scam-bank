@@ -15,7 +15,17 @@
 
 ---
 
-## 🛠️ Tech Stack
+## 🔁Submission Flow
+
+Here's how a user submits a scam report in under 60 seconds:
+
+![Submission Flow](docs/ubuntu_scam_bank_submission_flow.svg)
+
+No account needed for the first report — your account is created automatically after submission to track your contribution points. Our AI automatically strips sensitive personal data (name, phone, reply-to) before storing the report publicly.
+
+---
+
+## �🛠️ Tech Stack
 
 | Layer           | Technology                                                                                               |
 | --------------- | -------------------------------------------------------------------------------------------------------- |
@@ -23,6 +33,19 @@
 | Backend / API   | Next.js API Routes                                                                                       |
 | Database & Auth | [Supabase](https://supabase.com/) (PostgreSQL + Auth + Storage)                                          |
 | Deployment      | [Cloudflare Workers](https://workers.cloudflare.com/) via [OpenNext](https://opennext.js.org/cloudflare) |
+
+### System Architecture
+
+Our three-layer architecture ensures scalability, security, and reliability:
+
+![Platform Architecture](docs/ubuntu_scam_bank_platform_architecture.svg)
+
+**Key Components:**
+
+- **Presentation Layer** — React PWA frontend with upload wizard, leaderboard, and feed
+- **Logic Layer** — API gateway (Supabase/Cloudflare), AI triage service, points calculation, and researcher export
+- **Data Layer** — PostgreSQL for reports, Redis for caching/leaderboard, S3/R2 for encrypted file storage, Elasticsearch for search
+- **Safety Layer** — Moderation pipeline with AI scanning, human review, and sensitive data removal; open researcher feed with REST API and STIX/TAXII export
 
 ---
 

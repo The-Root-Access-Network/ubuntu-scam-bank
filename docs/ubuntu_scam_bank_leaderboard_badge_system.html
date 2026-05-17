@@ -1,0 +1,685 @@
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0
+  }
+
+  body {
+    font-size: 14px;
+    color: var(--color-text-primary)
+  }
+
+  .wrap {
+    padding: 0 0 2rem
+  }
+
+  .section {
+    margin-bottom: 1.5rem
+  }
+
+  .sec-title {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 12px
+  }
+
+  .card {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 16px
+  }
+
+  .tier-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px
+  }
+
+  .tier-card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 14px 12px;
+    text-align: center;
+    background: var(--color-background-primary)
+  }
+
+  .tier-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    font-size: 20px
+  }
+
+  .tier-name {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 2px
+  }
+
+  .tier-range {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px
+  }
+
+  .tier-perks {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    line-height: 1.7;
+    text-align: left
+  }
+
+  .tier-perk {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    margin-bottom: 2px
+  }
+
+  .t-watcher .tier-icon {
+    background: #F1EFE8;
+    color: #5F5E5A
+  }
+
+  .t-guardian .tier-icon {
+    background: #E6F1FB;
+    color: #185FA5
+  }
+
+  .t-sentinel .tier-icon {
+    background: #E1F5EE;
+    color: #0F6E56
+  }
+
+  .t-elite .tier-icon {
+    background: #FAEEDA;
+    color: #854F0B
+  }
+
+  .t-elite {
+    border-color: #EF9F27;
+    border-width: 1.5px
+  }
+
+  .pts-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px
+  }
+
+  .pts-table th {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 0.5px solid var(--color-border-tertiary)
+  }
+
+  .pts-table td {
+    padding: 8px 8px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    vertical-align: middle
+  }
+
+  .pts-table tr:last-child td {
+    border-bottom: none
+  }
+
+  .pts-val {
+    font-weight: 500;
+    color: #0F6E56;
+    white-space: nowrap
+  }
+
+  .pts-neg {
+    color: var(--color-text-danger)
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500
+  }
+
+  .tag-base {
+    background: #E1F5EE;
+    color: #085041
+  }
+
+  .tag-bonus {
+    background: #E6F1FB;
+    color: #0C447C
+  }
+
+  .tag-streak {
+    background: #FAEEDA;
+    color: #633806
+  }
+
+  .lb-filters {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    flex-wrap: wrap
+  }
+
+  .lb-filter {
+    font-size: 12px;
+    padding: 5px 12px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 20px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--color-text-secondary);
+    transition: all .15s
+  }
+
+  .lb-filter.active {
+    background: #0F6E56;
+    color: #fff;
+    border-color: #0F6E56
+  }
+
+  .lb-row {
+    display: grid;
+    grid-template-columns: 32px 36px 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--color-border-tertiary)
+  }
+
+  .lb-row:last-child {
+    border-bottom: none
+  }
+
+  .lb-row.me {
+    background: var(--color-background-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 10px 10px;
+    margin: 0 -10px
+  }
+
+  .rank-n {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-align: center
+  }
+
+  .rank-n.g {
+    color: #BA7517
+  }
+
+  .rank-n.s {
+    color: #888780
+  }
+
+  .rank-n.b {
+    color: #993C1D
+  }
+
+  .av {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    flex-shrink: 0
+  }
+
+  .lb-name {
+    font-size: 13px;
+    font-weight: 500
+  }
+
+  .lb-sub {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-top: 1px
+  }
+
+  .lb-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap
+  }
+
+  .lb-pts-val {
+    font-size: 14px;
+    font-weight: 500;
+    color: #0F6E56;
+    text-align: right;
+    white-space: nowrap
+  }
+
+  .sim-card {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 16px
+  }
+
+  .sim-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px
+  }
+
+  .sim-label {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    min-width: 160px
+  }
+
+  .sim-val {
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 40px;
+    text-align: right
+  }
+
+  .prog-track {
+    flex: 1;
+    height: 6px;
+    background: var(--color-background-secondary);
+    border-radius: 20px;
+    overflow: hidden
+  }
+
+  .prog-fill {
+    height: 100%;
+    border-radius: 20px;
+    background: #0F6E56;
+    transition: width .4s
+  }
+
+  .sim-total {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 4px
+  }
+
+  .sim-pts-big {
+    font-size: 28px;
+    font-weight: 500;
+    color: #0F6E56
+  }
+
+  .sim-tier-pill {
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 20px
+  }
+
+  .sim-next {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-top: 6px
+  }
+
+  .sim-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 8px
+  }
+
+  .sim-check input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #0F6E56
+  }
+</style>
+
+<div class="wrap">
+  <h2 class="sr-only">ScamVault leaderboard and badge tier system — interactive breakdown</h2>
+
+  <div class="section">
+    <div class="sec-title">Badge tiers</div>
+    <div class="tier-grid">
+      <div class="tier-card t-watcher">
+        <div class="tier-icon"><i class="ti ti-eye" aria-hidden="true"></i></div>
+        <div class="tier-name">Watcher</div>
+        <div class="tier-range">0 – 499 pts</div>
+        <div class="tier-perks">
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>Submit reports</div>
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>Vote on reports</div>
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>Browse feed</div>
+        </div>
+      </div>
+      <div class="tier-card t-guardian">
+        <div class="tier-icon"><i class="ti ti-shield" aria-hidden="true"></i></div>
+        <div class="tier-name">Guardian</div>
+        <div class="tier-range">500 – 1,999 pts</div>
+        <div class="tier-perks">
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>All Watcher perks</div>
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>Country leaderboard</div>
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>Monthly digest email</div>
+        </div>
+      </div>
+      <div class="tier-card t-sentinel">
+        <div class="tier-icon"><i class="ti ti-shield-check" aria-hidden="true"></i></div>
+        <div class="tier-name">Sentinel</div>
+        <div class="tier-range">2,000 – 4,999 pts</div>
+        <div class="tier-perks">
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>All Guardian perks</div>
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>Basic API access</div>
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>Early campaign alerts</div>
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>Profile verified badge</div>
+        </div>
+      </div>
+      <div class="tier-card t-elite">
+        <div class="tier-icon"><i class="ti ti-crown" aria-hidden="true"></i></div>
+        <div class="tier-name">Elite Sentinel</div>
+        <div class="tier-range">5,000+ pts</div>
+        <div class="tier-perks">
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>All Sentinel perks</div>
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>Full API + STIX export</div>
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>Moderator queue access</div>
+          <div class="tier-perk"><i class="ti ti-check" style="font-size:11px;margin-top:2px;color:#0F6E56"
+              aria-hidden="true"></i>Ubuntu Bridge cert.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">How points are earned</div>
+    <div class="card">
+      <table class="pts-table">
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Type</th>
+            <th style="text-align:right">Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Welcome — first report ever</td>
+            <td><span class="tag tag-base">base</span></td>
+            <td class="pts-val" style="text-align:right">+50</td>
+          </tr>
+          <tr>
+            <td>Submit any scam report</td>
+            <td><span class="tag tag-base">base</span></td>
+            <td class="pts-val" style="text-align:right">+10</td>
+          </tr>
+          <tr>
+            <td>Duplicate report (confirms campaign volume)</td>
+            <td><span class="tag tag-base">base</span></td>
+            <td class="pts-val" style="text-align:right">+5</td>
+          </tr>
+          <tr>
+            <td>Report verified by 10+ community votes</td>
+            <td><span class="tag tag-bonus">bonus</span></td>
+            <td class="pts-val" style="text-align:right">+15</td>
+          </tr>
+          <tr>
+            <td>Report severity 4 or 5 (high / critical)</td>
+            <td><span class="tag tag-bonus">bonus</span></td>
+            <td class="pts-val" style="text-align:right">+10</td>
+          </tr>
+          <tr>
+            <td>Novel campaign confirmed by moderator</td>
+            <td><span class="tag tag-bonus">bonus</span></td>
+            <td class="pts-val" style="text-align:right">+25</td>
+          </tr>
+          <tr>
+            <td>Full metadata included (headers + screenshot)</td>
+            <td><span class="tag tag-bonus">bonus</span></td>
+            <td class="pts-val" style="text-align:right">+5</td>
+          </tr>
+          <tr>
+            <td>Report featured in weekly digest</td>
+            <td><span class="tag tag-bonus">bonus</span></td>
+            <td class="pts-val" style="text-align:right">+20</td>
+          </tr>
+          <tr>
+            <td>7-day submission streak</td>
+            <td><span class="tag tag-streak">streak</span></td>
+            <td class="pts-val" style="text-align:right">+20</td>
+          </tr>
+          <tr>
+            <td>30-day submission streak</td>
+            <td><span class="tag tag-streak">streak</span></td>
+            <td class="pts-val" style="text-align:right">+75</td>
+          </tr>
+          <tr>
+            <td>Report flagged as spam or abuse</td>
+            <td><span class="tag" style="background:#FCEBEB;color:#791F1F">penalty</span></td>
+            <td class="pts-neg" style="text-align:right">−20</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">Points simulator — calculate your rank</div>
+    <div class="sim-card">
+      <div class="sim-row">
+        <div class="sim-label">Reports submitted</div>
+        <div class="prog-track">
+          <div class="prog-fill" id="pf-reports" style="width:30%"></div>
+        </div>
+        <input type="range" id="sl-reports" min="0" max="200" value="30" step="1" style="width:90px">
+        <div class="sim-val" id="vl-reports">30</div>
+      </div>
+      <div class="sim-row">
+        <div class="sim-label">Verified reports (% of total)</div>
+        <div class="prog-track">
+          <div class="prog-fill" id="pf-verified" style="width:70%"></div>
+        </div>
+        <input type="range" id="sl-verified" min="0" max="100" value="70" step="1" style="width:90px">
+        <div class="sim-val" id="vl-verified">70%</div>
+      </div>
+      <div class="sim-row">
+        <div class="sim-label">High/critical severity reports</div>
+        <div class="prog-track">
+          <div class="prog-fill" id="pf-high" style="width:20%"></div>
+        </div>
+        <input type="range" id="sl-high" min="0" max="50" value="10" step="1" style="width:90px">
+        <div class="sim-val" id="vl-high">10</div>
+      </div>
+      <div class="sim-row">
+        <div class="sim-label">Novel campaigns found</div>
+        <div class="prog-track">
+          <div class="prog-fill" id="pf-novel" style="width:10%"></div>
+        </div>
+        <input type="range" id="sl-novel" min="0" max="20" value="2" step="1" style="width:90px">
+        <div class="sim-val" id="vl-novel">2</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 14px">
+        <label class="sim-check"><input type="checkbox" id="ck-streak" onchange="calc()"> 7-day streak bonus</label>
+        <label class="sim-check"><input type="checkbox" id="ck-streak30" onchange="calc()"> 30-day streak bonus</label>
+        <label class="sim-check"><input type="checkbox" id="ck-welcome" checked onchange="calc()"> First report welcome
+          bonus</label>
+        <label class="sim-check"><input type="checkbox" id="ck-featured" onchange="calc()"> Report featured in
+          digest</label>
+      </div>
+      <div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:14px">
+        <div class="sim-total">
+          <div class="sim-pts-big" id="total-pts">1,235</div>
+          <div class="sim-tier-pill" id="tier-pill" style="background:#E6F1FB;color:#0C447C">Guardian</div>
+        </div>
+        <div class="sim-next" id="next-msg">760 pts to Sentinel · keep reporting!</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">Live leaderboard</div>
+    <div class="card">
+      <div class="lb-filters">
+        <div class="lb-filter active" onclick="filterLB(this,'all')">Global</div>
+        <div class="lb-filter" onclick="filterLB(this,'uk')">UK</div>
+        <div class="lb-filter" onclick="filterLB(this,'ng')">Nigeria</div>
+        <div class="lb-filter" onclick="filterLB(this,'gh')">Ghana</div>
+        <div class="lb-filter" onclick="filterLB(this,'za')">South Africa</div>
+        <div class="lb-filter" onclick="filterLB(this,'monthly')">This month</div>
+      </div>
+      <div id="lb-body"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const TIERS = [
+    { name: 'Watcher', min: 0, max: 499, bg: '#F1EFE8', col: '#5F5E5A', pill: 'background:#F1EFE8;color:#5F5E5A' },
+    { name: 'Guardian', min: 500, max: 1999, bg: '#E6F1FB', col: '#185FA5', pill: 'background:#E6F1FB;color:#0C447C' },
+    { name: 'Sentinel', min: 2000, max: 4999, bg: '#E1F5EE', col: '#0F6E56', pill: 'background:#E1F5EE;color:#085041' },
+    { name: 'Elite Sentinel', min: 5000, max: Infinity, bg: '#FAEEDA', col: '#854F0B', pill: 'background:#FAEEDA;color:#633806' },
+  ];
+
+  function getTier(p) { return TIERS.find(t => p >= t.min && p <= t.max) || TIERS[0] }
+
+  function calc() {
+    const reports = +document.getElementById('sl-reports').value;
+    const verifiedPct = +document.getElementById('sl-verified').value;
+    const high = +document.getElementById('sl-high').value;
+    const novel = +document.getElementById('sl-novel').value;
+    const streak7 = document.getElementById('ck-streak').checked;
+    const streak30 = document.getElementById('ck-streak30').checked;
+    const welcome = document.getElementById('ck-welcome').checked;
+    const featured = document.getElementById('ck-featured').checked;
+
+    document.getElementById('vl-reports').textContent = reports;
+    document.getElementById('vl-verified').textContent = verifiedPct + '%';
+    document.getElementById('vl-high').textContent = high;
+    document.getElementById('vl-novel').textContent = novel;
+    document.getElementById('pf-reports').style.width = (reports / 200 * 100) + '%';
+    document.getElementById('pf-verified').style.width = verifiedPct + '%';
+    document.getElementById('pf-high').style.width = (high / 50 * 100) + '%';
+    document.getElementById('pf-novel').style.width = (novel / 20 * 100) + '%';
+
+    const verified = Math.round(reports * verifiedPct / 100);
+    let pts = 0;
+    if (welcome) pts += 50;
+    pts += reports * 10;
+    pts += verified * 15;
+    pts += high * 10;
+    pts += novel * 25;
+    if (streak7) pts += 20;
+    if (streak30) pts += 75;
+    if (featured) pts += 20;
+
+    const tier = getTier(pts);
+    document.getElementById('total-pts').textContent = pts.toLocaleString();
+    const pill = document.getElementById('tier-pill');
+    pill.textContent = tier.name;
+    pill.style.cssText = 'font-size:12px;padding:4px 12px;border-radius:20px;' + tier.pill;
+
+    const nextTier = TIERS.find(t => t.min > pts);
+    const msg = nextTier
+      ? `${(nextTier.min - pts).toLocaleString()} pts to ${nextTier.name} · keep reporting!`
+      : 'Maximum tier reached — Elite Sentinel!';
+    document.getElementById('next-msg').textContent = msg;
+  }
+
+  ['sl-reports', 'sl-verified', 'sl-high', 'sl-novel'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calc);
+  });
+
+  const ALL_DATA = {
+    all: [
+      { rank: 1, init: 'AO', avBg: '#E1F5EE', avCol: '#085041', name: 'AdekunleO', sub: 'Nigeria · 312 reports', badge: 'Elite Sentinel', bdStyle: 'background:#FAEEDA;color:#633806', pts: 6820, me: false },
+      { rank: 2, init: 'SK', avBg: '#E6F1FB', avCol: '#0C447C', name: 'SafeKeeper_UK', sub: 'UK · 218 reports', badge: 'Elite Sentinel', bdStyle: 'background:#FAEEDA;color:#633806', pts: 5410, me: false },
+      { rank: 3, init: 'KA', avBg: '#FAEEDA', avCol: '#633806', name: 'KojoAlert', sub: 'Ghana · 190 reports', badge: 'Sentinel', bdStyle: 'background:#E1F5EE;color:#085041', pts: 3990, me: false },
+      { rank: 4, init: 'NJ', avBg: '#FAECE7', avCol: '#712B13', name: 'NetJustice', sub: 'South Africa · 155 reports', badge: 'Sentinel', bdStyle: 'background:#E1F5EE;color:#085041', pts: 3210, me: false },
+      { rank: 5, init: 'QO', avBg: '#EEEDFE', avCol: '#3C3489', name: 'QuadriO', sub: 'UK · 47 reports', badge: 'Guardian', bdStyle: 'background:#E6F1FB;color:#0C447C', pts: 1240, me: true },
+      { rank: 6, init: 'TF', avBg: '#E1F5EE', avCol: '#085041', name: 'TechFighter', sub: 'Kenya · 38 reports', badge: 'Guardian', bdStyle: 'background:#E6F1FB;color:#0C447C', pts: 980, me: false },
+      { rank: 7, init: 'AA', avBg: '#FCEBEB', avCol: '#791F1F', name: 'AlertAmina', sub: 'Nigeria · 29 reports', badge: 'Guardian', bdStyle: 'background:#E6F1FB;color:#0C447C', pts: 720, me: false },
+      { rank: 8, init: 'MB', avBg: '#F1EFE8', avCol: '#5F5E5A', name: 'MkosiB', sub: 'South Africa · 18 reports', badge: 'Watcher', bdStyle: 'background:#F1EFE8;color:#5F5E5A', pts: 310, me: false },
+    ],
+    uk: [
+      { rank: 1, init: 'SK', avBg: '#E6F1FB', avCol: '#0C447C', name: 'SafeKeeper_UK', sub: 'UK · 218 reports', badge: 'Elite Sentinel', bdStyle: 'background:#FAEEDA;color:#633806', pts: 5410, me: false },
+      { rank: 2, init: 'QO', avBg: '#EEEDFE', avCol: '#3C3489', name: 'QuadriO', sub: 'UK · 47 reports', badge: 'Guardian', bdStyle: 'background:#E6F1FB;color:#0C447C', pts: 1240, me: true },
+      { rank: 3, init: 'TF', avBg: '#E1F5EE', avCol: '#085041', name: 'TechFighter_Lon', sub: 'UK · 38 reports', badge: 'Guardian', bdStyle: 'background:#E6F1FB;color:#0C447C', pts: 980, me: false },
+      { rank: 4, init: 'RC', avBg: '#F1EFE8', avCol: '#5F5E5A', name: 'ReportCrew', sub: 'UK · 22 reports', badge: 'Watcher', bdStyle: 'background:#F1EFE8;color:#5F5E5A', pts: 420, me: false },
+    ],
+    ng: [
+      { rank: 1, init: 'AO', avBg: '#E1F5EE', avCol: '#085041', name: 'AdekunleO', sub: 'Nigeria · 312 reports', badge: 'Elite Sentinel', bdStyle: 'background:#FAEEDA;color:#633806', pts: 6820, me: false },
+      { rank: 2, init: 'AA', avBg: '#FCEBEB', avCol: '#791F1F', name: 'AlertAmina', sub: 'Nigeria · 29 reports', badge: 'Guardian', bdStyle: 'background:#E6F1FB;color:#0C447C', pts: 720, me: false },
+      { rank: 3, init: 'LB', avBg: '#FAEEDA', avCol: '#633806', name: 'LagosBeware', sub: 'Nigeria · 15 reports', badge: 'Watcher', bdStyle: 'background:#F1EFE8;color:#5F5E5A', pts: 290, me: false },
+    ],
+    gh: [
+      { rank: 1, init: 'KA', avBg: '#FAEEDA', avCol: '#633806', name: 'KojoAlert', sub: 'Ghana · 190 reports', badge: 'Sentinel', bdStyle: 'background:#E1F5EE;color:#085041', pts: 3990, me: false },
+      { rank: 2, init: 'GS', avBg: '#E6F1FB', avCol: '#0C447C', name: 'GhanaShield', sub: 'Ghana · 55 reports', badge: 'Guardian', bdStyle: 'background:#E6F1FB;color:#0C447C', pts: 1050, me: false },
+    ],
+    za: [
+      { rank: 1, init: 'NJ', avBg: '#FAECE7', avCol: '#712B13', name: 'NetJustice', sub: 'South Africa · 155 reports', badge: 'Sentinel', bdStyle: 'background:#E1F5EE;color:#085041', pts: 3210, me: false },
+      { rank: 2, init: 'MB', avBg: '#F1EFE8', avCol: '#5F5E5A', name: 'MkosiB', sub: 'South Africa · 18 reports', badge: 'Watcher', bdStyle: 'background:#F1EFE8;color:#5F5E5A', pts: 310, me: false },
+    ],
+    monthly: [
+      { rank: 1, init: 'QO', avBg: '#EEEDFE', avCol: '#3C3489', name: 'QuadriO', sub: 'UK · 12 reports this month', badge: 'Guardian', bdStyle: 'background:#E6F1FB;color:#0C447C', pts: 280, me: true },
+      { rank: 2, init: 'AA', avBg: '#FCEBEB', avCol: '#791F1F', name: 'AlertAmina', sub: 'Nigeria · 9 reports this month', badge: 'Guardian', bdStyle: 'background:#E6F1FB;color:#0C447C', pts: 195, me: false },
+      { rank: 3, init: 'GS', avBg: '#E6F1FB', avCol: '#0C447C', name: 'GhanaShield', sub: 'Ghana · 7 reports this month', badge: 'Guardian', bdStyle: 'background:#E6F1FB;color:#0C447C', pts: 140, me: false },
+      { rank: 4, init: 'RC', avBg: '#F1EFE8', avCol: '#5F5E5A', name: 'ReportCrew', sub: 'UK · 5 reports this month', badge: 'Watcher', bdStyle: 'background:#F1EFE8;color:#5F5E5A', pts: 95, me: false },
+    ]
+  };
+
+  const rankClass = ['', 'g', 's', 'b'];
+  function renderLB(key) {
+    const data = ALL_DATA[key] || ALL_DATA.all;
+    const body = document.getElementById('lb-body');
+    body.innerHTML = data.map(r => `
+    <div class="lb-row${r.me ? ' me' : ''}">
+      <div class="rank-n ${rankClass[r.rank] || ''}">${r.rank}</div>
+      <div class="av" style="background:${r.avBg};color:${r.avCol}">${r.init}</div>
+      <div>
+        <div class="lb-name">${r.name}${r.me ? ' <span style="font-size:11px;color:#0F6E56">(you)</span>' : ''}</div>
+        <div class="lb-sub">${r.sub}</div>
+      </div>
+      <div><span class="lb-badge" style="${r.bdStyle}">${r.badge}</span></div>
+      <div class="lb-pts-val">${r.pts.toLocaleString()}</div>
+    </div>
+  `).join('');
+  }
+
+  function filterLB(el, key) {
+    document.querySelectorAll('.lb-filter').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    renderLB(key);
+  }
+
+  renderLB('all');
+  calc();
+</script>
