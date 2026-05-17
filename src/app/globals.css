@@ -145,13 +145,11 @@
   .text-body-lg {
     font-size: 1.125rem; /* 18px */
     line-height: 1.7;
-    font-weight: 400;
   }
 
   .text-body {
     font-size: 1rem; /* 16px */
     line-height: 1.7;
-    font-weight: 400;
   }
 
   .text-body-sm {
