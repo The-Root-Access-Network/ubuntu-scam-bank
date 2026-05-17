@@ -42,7 +42,7 @@ export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
       <div className='bg-canvas border border-stroke-faint rounded-lg p-5'>
         {/* Title */}
         <div className='flex items-center gap-1.5 mb-3.5'>
-          <IconTrophy size={14} className='text-fg-muted' aria-hidden='true' />
+          <IconTrophy size={16} className='text-fg-muted' aria-hidden='true' />
           <p className='text-label text-fg-muted uppercase tracking-label'>
             Leaderboard
           </p>
@@ -54,7 +54,7 @@ export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
             <span
               key={tab}
               className={[
-                'text-[12px] px-3 py-1 rounded-md border',
+                'text-body-xs px-3 py-1 rounded-md border',
                 tab === 'Global'
                   ? 'bg-canvas-subtle border-stroke text-fg'
                   : 'border-transparent text-fg-muted cursor-not-allowed opacity-60',
@@ -67,7 +67,7 @@ export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
 
         {/* Entries */}
         {topUsers.length === 0 ? (
-          <p className='text-body-xs text-fg-muted text-center py-6'>
+          <p className='text-body-sm text-fg-muted text-center py-6'>
             No contributors yet.
           </p>
         ) : (
@@ -97,7 +97,7 @@ export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
 
                   {/* Avatar */}
                   <div
-                    className='w-[30px] h-[30px] rounded-full flex items-center justify-center text-[11px] font-medium shrink-0'
+                    className='w-7.5 h-7.5 rounded-full flex items-center justify-center text-caption font-medium shrink-0'
                     style={{ background: av.bg, color: av.fg }}
                   >
                     {initials(user.username)}
@@ -105,7 +105,7 @@ export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
 
                   {/* Name + sub */}
                   <div className='flex-1 min-w-0'>
-                    <p className='text-[13px] font-medium text-fg truncate'>
+                    <p className='text-body-sm font-medium text-fg truncate'>
                       {user.username}
                     </p>
                     <p className='text-caption text-fg-muted truncate'>
@@ -115,7 +115,7 @@ export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
                   </div>
 
                   {/* Points */}
-                  <span className='text-[13px] font-medium text-brand shrink-0'>
+                  <span className='text-body-xs font-medium text-brand shrink-0'>
                     {user.points.toLocaleString()}
                   </span>
                 </div>
@@ -126,7 +126,7 @@ export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
 
         <button
           type='button'
-          className='w-full mt-3 text-[12px] px-3.5 py-1.5 border border-stroke rounded-md bg-transparent text-fg hover:bg-canvas-subtle transition-colors duration-150 cursor-pointer'
+          className='w-full mt-3 text-body-xs font-medium px-3.5 py-1.5 border border-stroke rounded-md bg-transparent text-fg hover:bg-canvas-subtle transition-colors duration-150 cursor-pointer'
         >
           View full leaderboard ↗
         </button>
@@ -139,13 +139,13 @@ export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
         </p>
         {/* Auth not built yet — sign-in prompt */}
         <div className='text-center py-3'>
-          <p className='text-body-xs text-fg-muted leading-relaxed'>
+          <p className='text-body-sm text-fg-muted leading-relaxed'>
             Sign in to track your score and see how you rank against other
             contributors.
           </p>
           <button
             type='button'
-            className='mt-3 inline-flex items-center gap-2 bg-brand text-white px-4 py-2 rounded-md text-[12px] font-medium hover:bg-brand-dark transition-colors duration-150 cursor-pointer'
+            className='mt-3 inline-flex items-center gap-2 bg-brand text-white px-4 py-2 rounded-md text-body-xs font-medium hover:bg-brand-dark transition-colors duration-150 cursor-pointer'
           >
             Sign in
           </button>
@@ -158,21 +158,21 @@ export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
         id='researchers'
       >
         <div className='flex items-center gap-1.5 mb-2'>
-          <IconCode size={13} className='text-fg-muted' aria-hidden='true' />
+          <IconCode size={16} className='text-fg-muted' aria-hidden='true' />
           <p className='text-label text-fg-muted uppercase tracking-label'>
             Researcher access
           </p>
         </div>
-        <p className='text-body-xs text-fg-muted leading-relaxed mb-3'>
+        <p className='text-body-sm text-fg-muted leading-relaxed mb-3'>
           Free API access for verified security researchers, NGOs, and
           academics.
         </p>
-        <div className='bg-canvas-subtle border border-stroke-faint rounded-md px-3 py-2.5 font-mono text-[11px] text-fg-muted mb-3 overflow-x-auto'>
+        <div className='bg-canvas-subtle border border-stroke-faint rounded-md px-3 py-2.5 font-mono text-caption text-fg-muted mb-3 overflow-x-auto'>
           GET /api/v1/reports?type=phishing&amp;country=NG&amp;limit=50
         </div>
         <button
           type='button'
-          className='w-full text-[12px] px-3.5 py-1.5 border border-stroke rounded-md bg-transparent text-fg hover:bg-canvas-subtle transition-colors duration-150 cursor-pointer'
+          className='w-full text-body-xs font-medium px-3.5 py-1.5 border border-stroke rounded-md bg-transparent text-fg hover:bg-canvas-subtle transition-colors duration-150 cursor-pointer'
         >
           Request API key ↗
         </button>

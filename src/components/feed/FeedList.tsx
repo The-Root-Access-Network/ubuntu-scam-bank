@@ -49,7 +49,7 @@ export default function FeedList({ reports }: { reports: FeedReport[] }) {
             type='button'
             onClick={() => setActiveTab(label)}
             className={[
-              'text-[12px] px-3 py-1.5 rounded-md border transition-colors duration-150 cursor-pointer',
+              'text-body-xs px-3 py-1.5 rounded-md border transition-colors duration-150 cursor-pointer',
               activeTab === label
                 ? 'bg-canvas-subtle border-stroke text-fg'
                 : 'bg-transparent border-transparent text-fg-muted hover:text-fg',
@@ -62,7 +62,7 @@ export default function FeedList({ reports }: { reports: FeedReport[] }) {
 
       {/* Empty state */}
       {filtered.length === 0 ? (
-        <p className='text-body-xs text-fg-muted text-center py-8'>
+        <p className='text-body-sm text-fg-muted text-center py-8'>
           No reports yet — be the first to submit one.
         </p>
       ) : (
@@ -94,7 +94,7 @@ export default function FeedList({ reports }: { reports: FeedReport[] }) {
                 </div>
 
                 {/* Summary */}
-                <p className='text-body-xs text-fg leading-[1.5] mb-1.5'>
+                <p className='text-body-sm text-fg leading-normal mb-1.5'>
                   {report.summary ?? 'No summary available.'}
                 </p>
 
