@@ -21,7 +21,7 @@
 export interface PointsInput {
   severity: number; // 1–5 from triage
   is_novel: boolean; // true if triage flagged a new campaign
-  has_metadata: boolean; // true if file upload + context text both present
+  has_metadata: boolean; // true if file upload + context text both present (contextText.trim().length > 10)
 }
 
 export interface PointsResult {

@@ -13,7 +13,7 @@
  * 4. Returns a typed TriageResult that downstream code can rely on without additional checks.
  *
  * It never writes to the database — that is the submit route's responsibility.
- * 
+ *
  * Error handling:
  * - If the API call fails or returns unparseable JSON, triageSubmission returns a fallback result with triage_failed = true and confidence = 0.
  * - The submit route checks triage_failed and sets report status to 'under_review' for manual moderation in these cases.
@@ -93,7 +93,7 @@ const VALID_INDICATOR_TYPES = new Set<IndicatorType>([
 
 // Returned whenever Claude is unavailable or returns unparseable output.
 // The submit route checks triage_failed and sets report status accordingly.
-const FALLBACK_RESULT: TriageResult = {
+const FALLBACK_RESULT: TriageResult = Object.freeze({
   type: 'other',
   severity: 1,
   severity_reason: '',
@@ -106,7 +106,7 @@ const FALLBACK_RESULT: TriageResult = {
   pii_stripped: false,
   pii_found: [],
   triage_failed: true,
-};
+});
 
 // ── Client ────────────────────────────────────────────────────────────────────
 
