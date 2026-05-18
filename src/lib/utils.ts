@@ -63,4 +63,5 @@ export const BADGE_META: Record<string, { label: string; classes: string }> = {
     label: 'Elite Sentinel',
     classes: 'bg-elite-bg text-elite',
   },
+  sage: { label: 'Sage', classes: 'bg-elite-bg text-elite' },
 };
