@@ -159,3 +159,46 @@ development. Informal — written for the next developer (or future me).
 - Trigger correctly inserted rows in public.users for all three test accounts
 - Nav avatar + sign out renders correctly after sign-in
 - Sign out returns nav to sign-in state
+
+### GitHub Release Workflow (CI) Sub-step before Step 2
+
+- Added `.github/workflows/release.yml` — manual trigger via `Actions → Create Release → Run workflow`
+- Two inputs: version (e.g. v0.3.0) and title
+- Creates annotated tag on main, generates release draft with changelog auto-built from PR titles merged since last tag
+- draft: true means auto-generated notes can be reviewed and supplemented with known issues before publishing
+- Workflow only active once merged to main — currently in dev, will land in main as part of the v0.3.0 release
+- Future release process: feature branches → dev → main → Actions → Run workflow → review draft → publish
+
+### Points logic and AI triage pipeline (Phase 2 Steps 2 & 3)
+
+**calculate.ts:**
+
+- has_metadata contract: contextText.trim().length > 10 — not just
+  truthiness. Defined in PointsInput comment so the submit route
+  implementation is unambiguous
+- Phase 2 bonus constants (streaks, vote confirm, digest) defined
+  now with no active code paths — magic numbers live here rather
+  than appearing inline when those features are built
+- welcomeBonus and spamPenalty are standalone exports — welcome
+  bonus is conditional on submission count (checked by submit route),
+  penalty is triggered by moderation (not submission logic)
+- Unit tests flagged as a future pass — calculatePoints is a pure
+  function with no external deps, ideal candidate
+
+**triage.ts:**
+
+- crypto.subtle chosen over node:crypto — Web Crypto API works
+  natively in Cloudflare Workers runtime and with nodejs_compat
+  in local dev. node:crypto risks runtime mismatch
+- getClient() pattern (not module-level instantiation) — avoids
+  cold start issues on Workers where top-level side effects can
+  cause env var availability problems
+- FALLBACK_RESULT frozen with Object.freeze — intent is a fixed
+  constant, freeze enforces it
+- Markdown fence stripping before JSON.parse — Claude sometimes
+  wraps JSON in fences despite prompt instructions
+
+**types/triage.ts:**
+
+- Re-exports from lib/ai/triage.ts — source of truth stays in lib,
+  file exists so @/types/triage imports resolve correctly

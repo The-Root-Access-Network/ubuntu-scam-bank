@@ -1,0 +1,837 @@
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0
+  }
+
+  .doc-wrap {
+    font-size: 14px;
+    color: var(--color-text-primary);
+    padding-bottom: 2rem
+  }
+
+  .doc-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    background: var(--color-background-primary)
+  }
+
+  .doc-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500
+  }
+
+  .doc-logo-icon {
+    width: 26px;
+    height: 26px;
+    background: #0F6E56;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 13px
+  }
+
+  .doc-body {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    min-height: 600px
+  }
+
+  .doc-sidebar {
+    border-right: 0.5px solid var(--color-border-tertiary);
+    padding: 16px 0;
+    background: var(--color-background-secondary)
+  }
+
+  .sidebar-section {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    padding: 6px 16px 4px
+  }
+
+  .sidebar-link {
+    display: block;
+    font-size: 13px;
+    padding: 6px 16px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: all .15s
+  }
+
+  .sidebar-link:hover {
+    color: var(--color-text-primary);
+    background: var(--color-background-primary)
+  }
+
+  .sidebar-link.active {
+    color: #0F6E56;
+    border-left-color: #0F6E56;
+    background: var(--color-background-primary);
+    font-weight: 500
+  }
+
+  .doc-content {
+    padding: 24px 28px;
+    overflow: hidden
+  }
+
+  .ep-card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    margin-bottom: 20px;
+    overflow: hidden;
+    background: var(--color-background-primary)
+  }
+
+  .ep-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    cursor: pointer;
+    background: var(--color-background-secondary)
+  }
+
+  .method {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-family: var(--font-mono)
+  }
+
+  .method.get {
+    background: #E1F5EE;
+    color: #085041
+  }
+
+  .method.post {
+    background: #E6F1FB;
+    color: #0C447C
+  }
+
+  .ep-path {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-text-primary)
+  }
+
+  .ep-desc {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-left: auto
+  }
+
+  .ep-body {
+    padding: 16px
+  }
+
+  .param-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-bottom: 14px;
+    table-layout: fixed
+  }
+
+  .param-table th {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    text-align: left;
+    padding: 4px 8px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    font-weight: 500
+  }
+
+  .param-table td {
+    padding: 7px 8px;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    vertical-align: top;
+    word-break: break-word
+  }
+
+  .param-table tr:last-child td {
+    border-bottom: none
+  }
+
+  .param-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-primary)
+  }
+
+  .param-type {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--color-background-secondary);
+    color: var(--color-text-secondary);
+    font-family: var(--font-mono);
+    white-space: nowrap
+  }
+
+  .param-req {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #E1F5EE;
+    color: #085041;
+    white-space: nowrap
+  }
+
+  .param-opt {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #F1EFE8;
+    color: #5F5E5A;
+    white-space: nowrap
+  }
+
+  .code-block {
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 12px 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-primary);
+    overflow-x: auto;
+    position: relative;
+    margin-bottom: 12px;
+    white-space: pre
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 11px;
+    padding: 3px 8px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    background: var(--color-background-primary);
+    cursor: pointer;
+    color: var(--color-text-secondary)
+  }
+
+  .copy-btn:hover {
+    background: var(--color-background-secondary)
+  }
+
+  .ep-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: .05em
+  }
+
+  .access-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px
+  }
+
+  .access-card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 14px;
+    background: var(--color-background-primary)
+  }
+
+  .access-tier {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 4px
+  }
+
+  .access-rpm {
+    font-size: 20px;
+    font-weight: 500;
+    color: #0F6E56;
+    margin-bottom: 2px
+  }
+
+  .access-sub {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px
+  }
+
+  .access-feat {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    line-height: 1.8
+  }
+
+  .feat-row {
+    display: flex;
+    align-items: center;
+    gap: 5px
+  }
+
+  .resp-key {
+    color: #0C447C;
+    font-family: var(--font-mono);
+    font-size: 12px
+  }
+
+  .resp-str {
+    color: #085041;
+    font-family: var(--font-mono);
+    font-size: 12px
+  }
+
+  .resp-num {
+    color: #854F0B;
+    font-family: var(--font-mono);
+    font-size: 12px
+  }
+
+  .resp-bool {
+    color: #712B13;
+    font-family: var(--font-mono);
+    font-size: 12px
+  }
+
+  .tab-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px
+  }
+
+  .lang-tab {
+    font-size: 12px;
+    padding: 4px 12px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    background: transparent;
+    color: var(--color-text-secondary)
+  }
+
+  .lang-tab.active {
+    background: #0F6E56;
+    color: #fff;
+    border-color: #0F6E56
+  }
+
+  .err-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 7px 0;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    font-size: 13px
+  }
+
+  .err-row:last-child {
+    border-bottom: none
+  }
+
+  .err-code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap
+  }
+</style>
+
+<div class="doc-wrap">
+  <h2 class="sr-only">ScamVault Researcher API documentation — interactive endpoint explorer</h2>
+
+  <div class="doc-nav">
+    <div class="doc-logo">
+      <div class="doc-logo-icon"><i class="ti ti-shield-check" aria-hidden="true"></i></div>
+      ScamVault API <span
+        style="font-size:11px;padding:2px 8px;background:#E1F5EE;color:#085041;border-radius:20px;margin-left:4px;font-weight:400">v1</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span style="font-size:12px;color:var(--color-text-secondary)">Base URL:</span>
+      <span
+        style="font-family:var(--font-mono);font-size:12px;color:var(--color-text-primary)">https://api.scamvault.org/v1</span>
+    </div>
+  </div>
+
+  <div class="doc-body">
+    <div class="doc-sidebar">
+      <div class="sidebar-section">Getting started</div>
+      <div class="sidebar-link active" onclick="showSection('auth')">Authentication</div>
+      <div class="sidebar-link" onclick="showSection('access')">Access tiers</div>
+      <div class="sidebar-section" style="margin-top:8px">Endpoints</div>
+      <div class="sidebar-link" onclick="showSection('reports')">GET /reports</div>
+      <div class="sidebar-link" onclick="showSection('report-id')">GET /reports/:id</div>
+      <div class="sidebar-link" onclick="showSection('indicators')">GET /indicators</div>
+      <div class="sidebar-link" onclick="showSection('campaigns')">GET /campaigns</div>
+      <div class="sidebar-link" onclick="showSection('stix')">GET /export/stix</div>
+      <div class="sidebar-section" style="margin-top:8px">Reference</div>
+      <div class="sidebar-link" onclick="showSection('errors')">Error codes</div>
+      <div class="sidebar-link" onclick="showSection('rate')">Rate limits</div>
+    </div>
+
+    <div class="doc-content">
+
+      <div id="sec-auth">
+        <div style="font-size:18px;font-weight:500;margin-bottom:6px">Authentication</div>
+        <p style="font-size:13px;color:var(--color-text-secondary);line-height:1.7;margin-bottom:14px">All API requests
+          require an API key passed in the <span
+            style="font-family:var(--font-mono);font-size:12px;background:var(--color-background-secondary);padding:1px 5px;border-radius:4px">Authorization</span>
+          header. Keys are issued to verified researchers, NGOs, and academics. Sentinel-tier users and above can
+          request a key from their profile page.</p>
+        <div class="ep-label">Request header</div>
+        <div class="code-block">Authorization: Bearer sv_live_xxxxxxxxxxxxxxxxxxxx<button class="copy-btn"
+            onclick="copyCode(this)"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+        <div class="ep-label">Example — curl</div>
+        <div class="tab-row">
+          <div class="lang-tab active" onclick="switchLang(this,'curl')">curl</div>
+          <div class="lang-tab" onclick="switchLang(this,'python')">Python</div>
+          <div class="lang-tab" onclick="switchLang(this,'js')">JavaScript</div>
+        </div>
+        <div id="code-curl" class="code-block">curl -X GET "https://api.scamvault.org/v1/reports" \
+          -H "Authorization: Bearer sv_live_xxxxxxxxxxxxxxxxxxxx" \
+          -H "Accept: application/json"<button class="copy-btn" onclick="copyCode(this)"><i class="ti ti-copy"
+              aria-hidden="true"></i> Copy</button></div>
+        <div id="code-python" class="code-block" style="display:none">import requests
+
+          headers = {"Authorization": "Bearer sv_live_xxxxxxxxxxxxxxxxxxxx"}
+          r = requests.get("https://api.scamvault.org/v1/reports", headers=headers)
+          data = r.json()<button class="copy-btn" onclick="copyCode(this)"><i class="ti ti-copy" aria-hidden="true"></i>
+            Copy</button></div>
+        <div id="code-js" class="code-block" style="display:none">const res = await
+          fetch("https://api.scamvault.org/v1/reports", {
+          headers: { "Authorization": "Bearer sv_live_xxxxxxxxxxxxxxxxxxxx" }
+          });
+          const data = await res.json();<button class="copy-btn" onclick="copyCode(this)"><i class="ti ti-copy"
+              aria-hidden="true"></i> Copy</button></div>
+      </div>
+
+      <div id="sec-access" style="display:none">
+        <div style="font-size:18px;font-weight:500;margin-bottom:6px">Access tiers</div>
+        <p style="font-size:13px;color:var(--color-text-secondary);line-height:1.7;margin-bottom:14px">API access is
+          merit-based and free. Your tier is determined by your ScamVault contribution score.</p>
+        <div class="access-grid">
+          <div class="access-card">
+            <div class="access-tier">Sentinel</div>
+            <div class="access-rpm">60</div>
+            <div class="access-sub">requests / minute</div>
+            <div class="access-feat">
+              <div class="feat-row"><i class="ti ti-check" style="font-size:12px;color:#0F6E56" aria-hidden="true"></i>
+                Reports feed</div>
+              <div class="feat-row"><i class="ti ti-check" style="font-size:12px;color:#0F6E56" aria-hidden="true"></i>
+                Indicators</div>
+              <div class="feat-row"><i class="ti ti-check" style="font-size:12px;color:#0F6E56" aria-hidden="true"></i>
+                JSON only</div>
+              <div class="feat-row"><i class="ti ti-x" style="font-size:12px;color:var(--color-text-tertiary)"
+                  aria-hidden="true"></i> STIX export</div>
+            </div>
+          </div>
+          <div class="access-card" style="border-color:#0F6E56;border-width:1.5px">
+            <div
+              style="font-size:11px;background:#E1F5EE;color:#085041;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:6px">
+              Most access</div>
+            <div class="access-tier">Elite Sentinel</div>
+            <div class="access-rpm">300</div>
+            <div class="access-sub">requests / minute</div>
+            <div class="access-feat">
+              <div class="feat-row"><i class="ti ti-check" style="font-size:12px;color:#0F6E56" aria-hidden="true"></i>
+                All Sentinel endpoints</div>
+              <div class="feat-row"><i class="ti ti-check" style="font-size:12px;color:#0F6E56" aria-hidden="true"></i>
+                STIX 2.1 export</div>
+              <div class="feat-row"><i class="ti ti-check" style="font-size:12px;color:#0F6E56" aria-hidden="true"></i>
+                Campaigns feed</div>
+              <div class="feat-row"><i class="ti ti-check" style="font-size:12px;color:#0F6E56" aria-hidden="true"></i>
+                Bulk CSV download</div>
+            </div>
+          </div>
+          <div class="access-card">
+            <div class="access-tier">Verified org</div>
+            <div class="access-rpm">1,000</div>
+            <div class="access-sub">requests / minute</div>
+            <div class="access-feat">
+              <div class="feat-row"><i class="ti ti-check" style="font-size:12px;color:#0F6E56" aria-hidden="true"></i>
+                All Elite endpoints</div>
+              <div class="feat-row"><i class="ti ti-check" style="font-size:12px;color:#0F6E56" aria-hidden="true"></i>
+                Webhooks</div>
+              <div class="feat-row"><i class="ti ti-check" style="font-size:12px;color:#0F6E56" aria-hidden="true"></i>
+                TAXII server access</div>
+              <div class="feat-row"><i class="ti ti-check" style="font-size:12px;color:#0F6E56" aria-hidden="true"></i>
+                Priority support</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sec-reports" style="display:none">
+        <div class="ep-card">
+          <div class="ep-header">
+            <span class="method get">GET</span>
+            <span class="ep-path">/reports</span>
+            <span class="ep-desc">List published reports</span>
+          </div>
+          <div class="ep-body">
+            <div class="ep-label">Query parameters</div>
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th style="width:28%">Parameter</th>
+                  <th style="width:16%">Type</th>
+                  <th style="width:14%">Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">type</td>
+                  <td><span class="param-type">string</span></td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td style="font-size:12px;color:var(--color-text-secondary)">Filter by scam type. One of:
+                    phishing_email, smishing, investment_fraud, romance_scam, bec, tech_support, crypto_fraud</td>
+                </tr>
+                <tr>
+                  <td class="param-name">country</td>
+                  <td><span class="param-type">string</span></td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td style="font-size:12px;color:var(--color-text-secondary)">ISO 3166-1 alpha-2 country code. e.g. GB,
+                    NG, GH</td>
+                </tr>
+                <tr>
+                  <td class="param-name">severity</td>
+                  <td><span class="param-type">integer</span></td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td style="font-size:12px;color:var(--color-text-secondary)">Minimum severity (1–5). Returns reports
+                    at this level and above</td>
+                </tr>
+                <tr>
+                  <td class="param-name">from</td>
+                  <td><span class="param-type">datetime</span></td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td style="font-size:12px;color:var(--color-text-secondary)">ISO 8601 start date. e.g.
+                    2025-01-01T00:00:00Z</td>
+                </tr>
+                <tr>
+                  <td class="param-name">to</td>
+                  <td><span class="param-type">datetime</span></td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td style="font-size:12px;color:var(--color-text-secondary)">ISO 8601 end date</td>
+                </tr>
+                <tr>
+                  <td class="param-name">is_novel</td>
+                  <td><span class="param-type">boolean</span></td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td style="font-size:12px;color:var(--color-text-secondary)">If true, returns only novel/new campaign
+                    reports</td>
+                </tr>
+                <tr>
+                  <td class="param-name">limit</td>
+                  <td><span class="param-type">integer</span></td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td style="font-size:12px;color:var(--color-text-secondary)">Results per page. Default 50, max 200
+                  </td>
+                </tr>
+                <tr>
+                  <td class="param-name">cursor</td>
+                  <td><span class="param-type">string</span></td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td style="font-size:12px;color:var(--color-text-secondary)">Pagination cursor from previous response
+                    next_cursor field</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="ep-label">Example response</div>
+            <div class="code-block">{
+              <span class="resp-key">"data"</span>: [
+              {
+              <span class="resp-key">"id"</span>: <span class="resp-str">"rpt_01hwx3k..."</span>,
+              <span class="resp-key">"type"</span>: <span class="resp-str">"phishing_email"</span>,
+              <span class="resp-key">"severity"</span>: <span class="resp-num">4</span>,
+              <span class="resp-key">"country"</span>: <span class="resp-str">"NG"</span>,
+              <span class="resp-key">"summary"</span>: <span class="resp-str">"Fake Access Bank email harvesting
+                credentials..."</span>,
+              <span class="resp-key">"tags"</span>: [<span class="resp-str">"bank_impersonation"</span>, <span
+                class="resp-str">"credential_harvest"</span>],
+              <span class="resp-key">"is_novel"</span>: <span class="resp-bool">false</span>,
+              <span class="resp-key">"confirm_count"</span>: <span class="resp-num">23</span>,
+              <span class="resp-key">"published_at"</span>: <span class="resp-str">"2025-05-08T09:14:22Z"</span>
+              }
+              ],
+              <span class="resp-key">"meta"</span>: {
+              <span class="resp-key">"total"</span>: <span class="resp-num">14382</span>,
+              <span class="resp-key">"limit"</span>: <span class="resp-num">50</span>,
+              <span class="resp-key">"next_cursor"</span>: <span class="resp-str">"eyJpZCI6..."</span>
+              }
+              }<button class="copy-btn" onclick="copyCode(this)"><i class="ti ti-copy" aria-hidden="true"></i>
+                Copy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sec-report-id" style="display:none">
+        <div class="ep-card">
+          <div class="ep-header">
+            <span class="method get">GET</span>
+            <span class="ep-path">/reports/:id</span>
+            <span class="ep-desc">Get a single report with full indicators</span>
+          </div>
+          <div class="ep-body">
+            <div class="ep-label">Path parameters</div>
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th style="width:28%">Parameter</th>
+                  <th style="width:16%">Type</th>
+                  <th style="width:14%">Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">id</td>
+                  <td><span class="param-type">string</span></td>
+                  <td><span class="param-req">required</span></td>
+                  <td style="font-size:12px;color:var(--color-text-secondary)">Report ID from the list endpoint</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="ep-label">Example response</div>
+            <div class="code-block">{
+              <span class="resp-key">"id"</span>: <span class="resp-str">"rpt_01hwx3k..."</span>,
+              <span class="resp-key">"type"</span>: <span class="resp-str">"phishing_email"</span>,
+              <span class="resp-key">"severity"</span>: <span class="resp-num">4</span>,
+              <span class="resp-key">"summary"</span>: <span class="resp-str">"Fake Access Bank email harvesting
+                credentials..."</span>,
+              <span class="resp-key">"indicators"</span>: [
+              { <span class="resp-key">"type"</span>: <span class="resp-str">"domain"</span>, <span
+                class="resp-key">"value"</span>: <span class="resp-str">"accessbank-secure.net"</span> },
+              { <span class="resp-key">"type"</span>: <span class="resp-str">"email_address"</span>, <span
+                class="resp-key">"value"</span>: <span class="resp-str">"noreply@accessbank-secure.net"</span> }
+              ],
+              <span class="resp-key">"campaign_id"</span>: <span class="resp-str">"cmp_09kqz..."</span>,
+              <span class="resp-key">"ai_confidence"</span>: <span class="resp-num">0.94</span>,
+              <span class="resp-key">"confirm_count"</span>: <span class="resp-num">23</span>,
+              <span class="resp-key">"published_at"</span>: <span class="resp-str">"2025-05-08T09:14:22Z"</span>
+              }<button class="copy-btn" onclick="copyCode(this)"><i class="ti ti-copy" aria-hidden="true"></i>
+                Copy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sec-indicators" style="display:none">
+        <div class="ep-card">
+          <div class="ep-header">
+            <span class="method get">GET</span>
+            <span class="ep-path">/indicators</span>
+            <span class="ep-desc">Search extracted IOCs</span>
+          </div>
+          <div class="ep-body">
+            <div class="ep-label">Query parameters</div>
+            <table class="param-table">
+              <thead>
+                <tr>
+                  <th style="width:28%">Parameter</th>
+                  <th style="width:16%">Type</th>
+                  <th style="width:14%">Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="param-name">type</td>
+                  <td><span class="param-type">string</span></td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td style="font-size:12px;color:var(--color-text-secondary)">One of: domain, ip_address,
+                    email_address, phone_number, url</td>
+                </tr>
+                <tr>
+                  <td class="param-name">value</td>
+                  <td><span class="param-type">string</span></td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td style="font-size:12px;color:var(--color-text-secondary)">Exact or partial match. e.g.
+                    value=accessbank</td>
+                </tr>
+                <tr>
+                  <td class="param-name">limit</td>
+                  <td><span class="param-type">integer</span></td>
+                  <td><span class="param-opt">optional</span></td>
+                  <td style="font-size:12px;color:var(--color-text-secondary)">Default 100, max 500</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="sec-campaigns" style="display:none">
+        <div class="ep-card">
+          <div class="ep-header">
+            <span class="method get">GET</span>
+            <span class="ep-path">/campaigns</span>
+            <span class="ep-desc">Clustered scam campaign groups</span>
+          </div>
+          <div class="ep-body">
+            <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px;line-height:1.6">Campaigns are
+              automatically clustered groups of similar reports. A campaign with a high report_count indicates an
+              active, ongoing threat.</p>
+            <div class="ep-label">Example response</div>
+            <div class="code-block">{
+              <span class="resp-key">"id"</span>: <span class="resp-str">"cmp_09kqz..."</span>,
+              <span class="resp-key">"name"</span>: <span class="resp-str">"Access Bank credential harvest — May
+                2025"</span>,
+              <span class="resp-key">"type"</span>: <span class="resp-str">"phishing_email"</span>,
+              <span class="resp-key">"report_count"</span>: <span class="resp-num">87</span>,
+              <span class="resp-key">"first_seen"</span>: <span class="resp-str">"2025-05-01T00:00:00Z"</span>,
+              <span class="resp-key">"last_seen"</span>: <span class="resp-str">"2025-05-08T11:30:00Z"</span>
+              }<button class="copy-btn" onclick="copyCode(this)"><i class="ti ti-copy" aria-hidden="true"></i>
+                Copy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sec-stix" style="display:none">
+        <div class="ep-card">
+          <div class="ep-header">
+            <span class="method get">GET</span>
+            <span class="ep-path">/export/stix</span>
+            <span class="ep-desc">STIX 2.1 bundle — Elite Sentinel+</span>
+          </div>
+          <div class="ep-body">
+            <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:12px;line-height:1.6">Returns a
+              STIX 2.1 compliant bundle of indicators and threat actors. Compatible with any TAXII-enabled SIEM or
+              threat intel platform.</p>
+            <div class="ep-label">Example response</div>
+            <div class="code-block">{
+              <span class="resp-key">"type"</span>: <span class="resp-str">"bundle"</span>,
+              <span class="resp-key">"id"</span>: <span class="resp-str">"bundle--f9a8..."</span>,
+              <span class="resp-key">"spec_version"</span>: <span class="resp-str">"2.1"</span>,
+              <span class="resp-key">"objects"</span>: [
+              {
+              <span class="resp-key">"type"</span>: <span class="resp-str">"indicator"</span>,
+              <span class="resp-key">"id"</span>: <span class="resp-str">"indicator--3b4c..."</span>,
+              <span class="resp-key">"name"</span>: <span class="resp-str">"Phishing domain —
+                accessbank-secure.net"</span>,
+              <span class="resp-key">"pattern"</span>: <span class="resp-str">"[domain-name:value =
+                'accessbank-secure.net']"</span>,
+              <span class="resp-key">"pattern_type"</span>: <span class="resp-str">"stix"</span>,
+              <span class="resp-key">"valid_from"</span>: <span class="resp-str">"2025-05-01T00:00:00Z"</span>
+              }
+              ]
+              }<button class="copy-btn" onclick="copyCode(this)"><i class="ti ti-copy" aria-hidden="true"></i>
+                Copy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sec-errors" style="display:none">
+        <div style="font-size:18px;font-weight:500;margin-bottom:14px">Error codes</div>
+        <div class="ep-card">
+          <div class="ep-body">
+            <div class="err-row"><span class="err-code" style="background:#E1F5EE;color:#085041">200</span>
+              <div>
+                <div style="font-size:13px;font-weight:500">OK</div>
+                <div style="font-size:12px;color:var(--color-text-secondary)">Request succeeded</div>
+              </div>
+            </div>
+            <div class="err-row"><span class="err-code" style="background:#E6F1FB;color:#0C447C">400</span>
+              <div>
+                <div style="font-size:13px;font-weight:500">Bad request</div>
+                <div style="font-size:12px;color:var(--color-text-secondary)">Invalid parameter. Check the error.message
+                  field for details</div>
+              </div>
+            </div>
+            <div class="err-row"><span class="err-code" style="background:#FAEEDA;color:#633806">401</span>
+              <div>
+                <div style="font-size:13px;font-weight:500">Unauthorized</div>
+                <div style="font-size:12px;color:var(--color-text-secondary)">Missing or invalid API key</div>
+              </div>
+            </div>
+            <div class="err-row"><span class="err-code" style="background:#FAEEDA;color:#633806">403</span>
+              <div>
+                <div style="font-size:13px;font-weight:500">Forbidden</div>
+                <div style="font-size:12px;color:var(--color-text-secondary)">Your tier does not have access to this
+                  endpoint</div>
+              </div>
+            </div>
+            <div class="err-row"><span class="err-code" style="background:#FCEBEB;color:#791F1F">429</span>
+              <div>
+                <div style="font-size:13px;font-weight:500">Rate limit exceeded</div>
+                <div style="font-size:12px;color:var(--color-text-secondary)">Retry after the seconds value in the
+                  Retry-After header</div>
+              </div>
+            </div>
+            <div class="err-row"><span class="err-code" style="background:#FCEBEB;color:#791F1F">500</span>
+              <div>
+                <div style="font-size:13px;font-weight:500">Internal server error</div>
+                <div style="font-size:12px;color:var(--color-text-secondary)">Something went wrong on our end. Report to
+                  api@scamvault.org</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sec-rate" style="display:none">
+        <div style="font-size:18px;font-weight:500;margin-bottom:14px">Rate limits</div>
+        <p style="font-size:13px;color:var(--color-text-secondary);line-height:1.7;margin-bottom:14px">Rate limit
+          headers are returned with every response. Use <span
+            style="font-family:var(--font-mono);font-size:12px;background:var(--color-background-secondary);padding:1px 5px;border-radius:4px">X-RateLimit-Remaining</span>
+          to track your usage in real time.</p>
+        <div class="code-block">X-RateLimit-Limit: 300
+          X-RateLimit-Remaining: 284
+          X-RateLimit-Reset: 1715165220
+          Retry-After: 12</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const sections = ['auth', 'access', 'reports', 'report-id', 'indicators', 'campaigns', 'stix', 'errors', 'rate'];
+  function showSection(id) {
+    sections.forEach(s => {
+      const el = document.getElementById('sec-' + s);
+      if (el) el.style.display = 'none';
+    });
+    const target = document.getElementById('sec-' + id);
+    if (target) target.style.display = 'block';
+    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+    const labels = { 'auth': 'Authentication', 'access': 'Access tiers', 'reports': 'GET /reports', 'report-id': 'GET /reports/:id', 'indicators': 'GET /indicators', 'campaigns': 'GET /campaigns', 'stix': 'GET /export/stix', 'errors': 'Error codes', 'rate': 'Rate limits' };
+    document.querySelectorAll('.sidebar-link').forEach(l => { if (l.textContent.trim() === labels[id]) l.classList.add('active'); });
+  }
+  function switchLang(tab, lang) {
+    document.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    ['curl', 'python', 'js'].forEach(l => {
+      const el = document.getElementById('code-' + l);
+      if (el) el.style.display = l === lang ? 'block' : 'none';
+    });
+  }
+  function copyCode(btn) {
+    const block = btn.parentElement;
+    const txt = block.innerText.replace('Copy', '').trim();
+    navigator.clipboard.writeText(txt).catch(() => { });
+    btn.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i> Copied';
+    setTimeout(() => btn.innerHTML = '<i class="ti ti-copy" aria-hidden="true"></i> Copy', 2000);
+  }
+</script>
