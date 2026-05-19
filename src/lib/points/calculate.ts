@@ -41,6 +41,9 @@ export interface PointsLineItem {
 // Defined as a const object so individual values can be referenced by name
 // in tests and in the submit route without magic numbers.
 
+// ── Badge tier thresholds (for reference — enforced by DB trigger) ───────────
+// Watcher: 0–2499 | Guardian: 2500–4999 | Sentinel: 5000–9999
+// Elite Sentinel: 10000–19999 | Sage: 20000+
 export const POINTS = {
   WELCOME_BONUS: 50, // first report ever — awarded separately at submit time
   BASE_SUBMISSION: 10, // every standard submission

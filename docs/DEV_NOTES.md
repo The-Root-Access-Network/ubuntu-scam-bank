@@ -202,3 +202,138 @@ development. Informal — written for the next developer (or future me).
 
 - Re-exports from lib/ai/triage.ts — source of truth stays in lib,
   file exists so @/types/triage imports resolve correctly
+
+---
+
+## 2026-05-18
+
+### Deleting a user from SQL Editor
+
+Deleting from `public.users` alone isn't enough — the auth record lives in `auth.users` and that's the source of truth. If you only delete from `public.users`, the auth record remains and the trigger won't re-fire on next sign-in (because the auth user already exists), so the public row won't be recreated cleanly either.
+
+The right way:
+
+```sql
+-- Delete from auth.users — cascades to public.users via the foreign key
+delete from auth.users where email = 'the-email@example.com';
+```
+
+If you don't have the email handy:
+
+```sql
+-- Find the user first
+select id, email from auth.users;
+
+-- Then delete by id
+delete from auth.users where id = 'uuid-here';
+```
+
+Alternatively, Supabase dashboard → Authentication → Users → find the user → delete from there. That's the cleanest option for one-off test user cleanup since it handles everything through the UI.
+
+### Badge tier system update (founder review — 2026-05-18)
+
+**Motivation:**
+Founder reviewed the original tiers and felt the progression arc was too short. Widened thresholds and added a Sage tier at 20,000+ to reward the most sustained contributors.
+
+**New thresholds:**
+
+- Watcher: 0 – 2,499
+- Guardian: 2,500 – 4,999
+- Sentinel: 5,000 – 9,999
+- Elite Sentinel: 10,000 – 19,999
+- Sage: 20,000+
+
+**What changed:**
+
+- `users_badge_check` constraint dropped and recreated with sage added
+- `update_badge()` trigger updated with new thresholds
+- `BADGE_META` in `utils.ts` updated — sage uses elite colour classes as interim, dedicated tokens in Phase 3 badge UI pass
+- Tier thresholds reference comment added to calculate.ts above `POINTS` const — thresholds enforced by DB trigger, comment keeps the file honest
+
+**Note on points progression:**
+At `BASE_SUBMISSION = 10pts`, reaching Guardian now requires 250 standard submissions. Longer arc — flagged to founder, intentional.
+
+### Researcher API key flow (founder discussion — 2026-05-18)
+
+**Founder's intent:**
+"Request API Key" should be an application process — not instant issuance. Researchers fill a form stating who they are, their role, and intended use. TRAN reviews and approves manually.
+
+**Proposed flow:**
+
+1. Researcher clicks Request API key → /researchers/apply
+2. Form fields: full name, organisation, role, use case, portfolio URL (optional), terms agreement
+3. Submission creates researcher_applications row (status=pending)
+4. TRAN team reviews manually (automated later)
+5. On approval, API key generated, hashed, stored in api_keys table
+6. Key delivered to researcher via email
+
+**New table needed (Phase 3):**
+researcher_applications — id, user_id, full_name, organisation, role, use_case, portfolio_url, status (pending/approved/rejected), reviewed_by, reviewed_at, created_at
+
+**GitHub issue created** — tracked for Phase 3 implementation.
+Not a blocker for current development.
+
+**Collaboration / open source plan (founder discussion):**
+
+- `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue templates already in place
+- Contribution tiers proposed: Reporter → Contributor → Maintainer → Core team
+- `SECURITY.md` needed before going open source — responsible disclosure for vulnerabilities found in the platform itself
+- CLA (Contributor License Agreement) worth considering — protects TRAN's ability to relicense. CLA Assistant automates on GitHub
+- GitHub issue created for `SECURITY.md` — do before public launch
+
+---
+
+## 2026-05-19
+
+### End-to-end submission pipeline testing and fixes
+
+**Model deprecation fix:**
+
+- claude-sonnet-4-20250514 was returning 404 — deprecated and reaching end-of-life June 15, 2026
+- Updated to claude-sonnet-4-6 in [src/lib/ai/triage.ts](../src/lib/ai/triage.ts).
+- Lesson: always check Anthropic's model deprecation page before any release that touches the triage pipeline
+
+**Duplicate submission bug:**
+
+- Root cause: route was generating a new `reportId` and skipping the report insert (correct) but still trying to insert a
+  submissions row with the non-existent `reportId`
+- Fix: `submissionReportId = isDuplicate ? existing?.id : reportId`
+- Ledger rows also updated to use `submissionReportId`
+- `campaign_id` hardcoded to null — clustering logic is Phase 3
+
+**Storage bucket name mismatch:**
+
+- Bucket created in Supabase dashboard as scam_reports (underscore)
+- Code referenced scam-reports (hyphen)
+- Fix: corrected BUCKET constant in src/lib/storage/upload.ts
+- Also stripped internal error message from user-facing UploadError for STORAGE_ERROR — users see "File upload failed. Please try again."
+
+**Feed not populating — RLS gap:**
+
+- getPageData() uses anon key client which respects RLS
+- reports table had RLS enabled but no SELECT policy defined
+- Postgres default with RLS enabled + no policy = zero rows returned
+- Fix: added "Published reports are publicly readable" policy using (status = 'published') — only published reports visible
+- Lesson: always add RLS policies immediately when enabling RLS on a new table, even if the query is public
+
+**Cache revalidation:**
+
+- `router.refresh()` from client wasn't reliably triggering server component re-fetch after submission
+- Fix: `revalidatePath('/')` added in submit route before return
+- `router.refresh()` with 500ms delay kept as belt-and-suspenders
+
+**`confirm_count` and `view_count`:**
+
+- Both correctly showing 0 — no mechanism writes to them yet
+- `confirm_count`: needs community voting (Phase 3)
+- `view_count`: needs report detail page — increment on page visit, not on feed impression
+- GitHub issues created for both, tracked for Phase 3
+
+**Phase 2 Steps 1–6 verified end-to-end:**
+
+- Auth (Google OAuth + email) ✅
+- Points logic ✅
+- AI triage pipeline ✅
+- File upload to Supabase Storage ✅
+- /api/submit full implementation ✅
+- SubmissionForm wired to API ✅
