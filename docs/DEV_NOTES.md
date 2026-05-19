@@ -280,3 +280,60 @@ Not a blocker for current development.
 - `SECURITY.md` needed before going open source — responsible disclosure for vulnerabilities found in the platform itself
 - CLA (Contributor License Agreement) worth considering — protects TRAN's ability to relicense. CLA Assistant automates on GitHub
 - GitHub issue created for `SECURITY.md` — do before public launch
+
+---
+
+## 2026-05-19
+
+### End-to-end submission pipeline testing and fixes
+
+**Model deprecation fix:**
+
+- claude-sonnet-4-20250514 was returning 404 — deprecated and reaching end-of-life June 15, 2026
+- Updated to claude-sonnet-4-6 in [src/lib/ai/triage.ts](../src/lib/ai/triage.ts).
+- Lesson: always check Anthropic's model deprecation page before any release that touches the triage pipeline
+
+**Duplicate submission bug:**
+
+- Root cause: route was generating a new `reportId` and skipping the report insert (correct) but still trying to insert a
+  submissions row with the non-existent `reportId`
+- Fix: `submissionReportId = isDuplicate ? existing?.id : reportId`
+- Ledger rows also updated to use `submissionReportId`
+- `campaign_id` hardcoded to null — clustering logic is Phase 3
+
+**Storage bucket name mismatch:**
+
+- Bucket created in Supabase dashboard as scam_reports (underscore)
+- Code referenced scam-reports (hyphen)
+- Fix: corrected BUCKET constant in src/lib/storage/upload.ts
+- Also stripped internal error message from user-facing UploadError for STORAGE_ERROR — users see "File upload failed. Please try again."
+
+**Feed not populating — RLS gap:**
+
+- getPageData() uses anon key client which respects RLS
+- reports table had RLS enabled but no SELECT policy defined
+- Postgres default with RLS enabled + no policy = zero rows returned
+- Fix: added "Published reports are publicly readable" policy using (status = 'published') — only published reports visible
+- Lesson: always add RLS policies immediately when enabling RLS on a new table, even if the query is public
+
+**Cache revalidation:**
+
+- `router.refresh()` from client wasn't reliably triggering server component re-fetch after submission
+- Fix: `revalidatePath('/')` added in submit route before return
+- `router.refresh()` with 500ms delay kept as belt-and-suspenders
+
+**`confirm_count` and `view_count`:**
+
+- Both correctly showing 0 — no mechanism writes to them yet
+- `confirm_count`: needs community voting (Phase 3)
+- `view_count`: needs report detail page — increment on page visit, not on feed impression
+- GitHub issues created for both, tracked for Phase 3
+
+**Phase 2 Steps 1–6 verified end-to-end:**
+
+- Auth (Google OAuth + email) ✅
+- Points logic ✅
+- AI triage pipeline ✅
+- File upload to Supabase Storage ✅
+- /api/submit full implementation ✅
+- SubmissionForm wired to API ✅
