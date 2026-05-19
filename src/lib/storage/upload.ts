@@ -24,7 +24,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-const BUCKET = 'scam-reports';
+const BUCKET = 'scam_reports';
 
 const ALLOWED_TYPES: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -106,7 +106,7 @@ export async function uploadSubmissionFile(
   if (error) {
     console.error('[upload] Storage error:', error);
     throw new UploadError(
-      `Storage upload failed: ${error.message}`,
+      'File upload failed. Please try again.',
       'STORAGE_ERROR',
     );
   }
