@@ -19,7 +19,7 @@
  * extracted text content for use in the triage pipeline.
  */
 
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -92,7 +92,7 @@ export async function uploadSubmissionFile(
   const text = await extractText(file.type, rawBuffer);
 
   // ── Upload to Supabase Storage ────────────────────────────────────────────
-  const supabase = await createClient();
+  const supabase = createAdminClient(); // was: await createClient();
   const path = `${userId}/${reportId}.${ext}`;
 
   const { error } = await supabase.storage
