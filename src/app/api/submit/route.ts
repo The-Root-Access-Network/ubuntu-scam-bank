@@ -1,6 +1,7 @@
 // src/app/api/submit/route.ts
 
 import { NextRequest } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { uploadSubmissionFile, UploadError } from '@/lib/storage/upload';
@@ -141,27 +142,19 @@ export async function POST(request: NextRequest) {
   // ── 6. Build full content string for triage ───────────────────────────────
   // Pasted text + file-extracted text (EML/TXT only) + user context note.
   // Context goes last so it doesn't pollute the IOC extraction.
-  const fullContent = [
-    pastedText.trim(),
-    (fileResult?.text ?? '').trim(),
-    context.trim() ? `Submitter note: ${context.trim()}` : '',
-  ]
+  const coreContent = [pastedText.trim(), (fileResult?.text ?? '').trim()]
     .filter(Boolean)
     .join('\n\n');
 
-  if (!fullContent) {
+  if (!coreContent) {
     return Response.json(
-      {
-        success: false,
-        error:
-          'No readable content found. Please paste the scam text or upload an EML or TXT file.',
-      },
+      { success: false, error: 'No readable content found...' },
       { status: 400 },
     );
   }
 
   // ── 7. Deduplication — hash check ─────────────────────────────────────────
-  const contentHash = await hashContent(fullContent);
+  const contentHash = await hashContent(coreContent);
 
   const { data: existing } = await admin
     .from('reports')
@@ -170,6 +163,14 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
 
   const isDuplicate = !!existing;
+
+  // Build full triage content — context appended after hash check
+  const fullContent = [
+    coreContent,
+    context.trim() ? `Submitter note: ${context.trim()}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 
   // ── 8. AI triage ──────────────────────────────────────────────────────────
   // Never throws — returns triage_failed: true on any Claude API failure.
@@ -205,37 +206,40 @@ export async function POST(request: NextRequest) {
   // Status: 'published' for successfully triaged reports (MVP auto-publish);
   //         'under_review' if triage failed — requires manual moderation.
   // TODO: switch to 'pending' + moderation queue in Phase 3.
-  const { error: reportError } = await admin.from('reports').insert({
-    id: reportId,
-    submitted_by: user.id,
-    type: triage.triage_failed ? formType : triage.type,
-    severity: triage.triage_failed ? formSeverity : triage.severity,
-    status: triage.triage_failed ? 'under_review' : 'published',
-    country_code: COUNTRY_CODES[country] ?? null,
-    summary: triage.summary || null,
-    raw_content: fullContent,
-    content_hash: contentHash,
-    ai_category: triage.triage_failed ? null : triage.type,
-    ai_confidence: triage.triage_failed ? null : triage.confidence,
-    ai_tags: triage.triage_failed ? [] : triage.ai_tags,
-    file_path: fileResult?.path ?? null,
-    file_type: fileResult?.file_type ?? null,
-    is_novel: triage.is_novel,
-    campaign_id: isDuplicate ? (existing?.campaign_id ?? null) : null,
-    published_at: triage.triage_failed ? null : new Date().toISOString(),
-  });
+  if (!isDuplicate) {
+    const { error: reportError } = await admin.from('reports').insert({
+      id: reportId,
+      submitted_by: user.id,
+      type: triage.triage_failed ? formType : triage.type,
+      severity: triage.triage_failed ? formSeverity : triage.severity,
+      status: triage.triage_failed ? 'under_review' : 'published',
+      country_code: COUNTRY_CODES[country] ?? null,
+      summary: triage.summary || null,
+      raw_content: fullContent,
+      content_hash: contentHash,
+      ai_category: triage.triage_failed ? null : triage.type,
+      ai_confidence: triage.triage_failed ? null : triage.confidence,
+      ai_tags: triage.triage_failed ? [] : triage.ai_tags,
+      file_path: fileResult?.path ?? null,
+      file_type: fileResult?.file_type ?? null,
+      is_novel: triage.is_novel,
+      // campaign_id: isDuplicate ? (existing?.campaign_id ?? null) : null,
+      campaign_id: null,
+      published_at: triage.triage_failed ? null : new Date().toISOString(),
+    });
 
-  if (reportError) {
-    console.error('[submit] Report insert failed:', reportError);
-    return Response.json(
-      { success: false, error: 'Submission failed. Please try again.' },
-      { status: 500 },
-    );
+    if (reportError) {
+      console.error('[submit] Report insert failed:', reportError);
+      return Response.json(
+        { success: false, error: 'Submission failed. Please try again.' },
+        { status: 500 },
+      );
+    }
   }
 
   // ── 12. Insert indicators ─────────────────────────────────────────────────
   // Non-fatal if this fails — the report is already stored.
-  if (!triage.triage_failed && triage.indicators.length > 0) {
+  if (!isDuplicate && !triage.triage_failed && triage.indicators.length > 0) {
     const { error: indicatorsError } = await admin.from('indicators').insert(
       triage.indicators.map((ind) => ({
         report_id: reportId,
@@ -253,9 +257,14 @@ export async function POST(request: NextRequest) {
   }
 
   // ── 13. Insert submission row ─────────────────────────────────────────────
+  // For duplicates, link to the existing report — not the generated reportId
+  const submissionReportId = isDuplicate
+    ? (existing?.id ?? reportId)
+    : reportId;
+
   const { error: submissionError } = await admin.from('submissions').insert({
     user_id: user.id,
-    report_id: reportId,
+    report_id: submissionReportId,
     points_awarded: totalDelta,
     bonus_reason: pointsResult.ledger_reason,
   });
@@ -282,7 +291,7 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       delta: pointsResult.total,
       reason: pointsResult.ledger_reason,
-      ref_id: reportId,
+      ref_id: submissionReportId, // was: reportId
     },
   ];
 
@@ -291,7 +300,7 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       delta: welcomeItem.delta,
       reason: welcomeItem.reason,
-      ref_id: reportId,
+      ref_id: submissionReportId, // was: reportId
     });
   }
 
@@ -328,6 +337,9 @@ export async function POST(request: NextRequest) {
     ...pointsResult.breakdown,
     ...(welcomeItem ? [welcomeItem] : []),
   ];
+
+  // Invalidate the homepage cache so the feed updates immediately
+  revalidatePath('/');
 
   return Response.json({
     success: true,
