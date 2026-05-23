@@ -43,8 +43,7 @@ async function getReport(id: string) {
     supabase
       .from('reports')
       .select(
-        'id, type, severity, country_code, summary, ai_tags, ai_confidence, ' +
-          'confirm_count, dispute_count, view_count, is_novel, submitted_at',
+        'id, type, severity, country_code, summary, ai_tags, ai_confidence, confirm_count, dispute_count, view_count, is_novel, submitted_at',
       )
       .eq('id', id)
       .eq('status', 'published')
