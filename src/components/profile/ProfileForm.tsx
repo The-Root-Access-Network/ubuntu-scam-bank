@@ -19,26 +19,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IconCheck, IconLoader2 } from '@tabler/icons-react';
 import { COUNTRY_OPTIONS } from '@/lib/countries';
-import { BADGE_META } from '@/lib/utils';
+import { BADGE_META, getInitials } from '@/lib/utils';
 import type { Database } from '@/types/database';
 
 type UserRow = Pick<
   Database['public']['Tables']['users']['Row'],
   'username' | 'display_name' | 'bio' | 'country_code' | 'points' | 'badge'
 >;
-
-// Derives initials from display_name (two-word aware) or falls back to username.
-export function getInitials(
-  displayName: string | null,
-  username: string,
-): string {
-  const source = displayName?.trim() || username;
-  const parts = source.split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-  return source.slice(0, 2).toUpperCase();
-}
 
 export default function ProfileForm({ user }: { user: UserRow }) {
   const router = useRouter();
