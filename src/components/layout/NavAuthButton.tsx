@@ -12,11 +12,12 @@
 
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import AuthModal from '@/components/auth/AuthModal';
-import { getInitials } from '@/components/profile/ProfileForm';
+import { getInitials } from '@/lib/utils';
 
 // NavAuthButton is a client component island dropped into the server-rendered Nav.
 // It owns auth state for the nav — everything else in Nav stays as a server component.
@@ -64,13 +65,13 @@ export default function NavAuthButton() {
     const initials = getInitials(displayName, user.email ?? 'U');
     return (
       <div className='flex items-center gap-2.5'>
-        <a
+        <Link
           href='/profile'
           className='w-7 h-7 rounded-full bg-brand-light flex items-center justify-center text-caption font-medium text-brand-dark shrink-0 hover:opacity-80 transition-opacity'
           aria-label='Your profile'
         >
           {initials}
-        </a>
+        </Link>
         <button
           type='button'
           onClick={handleSignOut}
