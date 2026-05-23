@@ -40,7 +40,7 @@ async function getPageData() {
       .limit(20),
     supabase
       .from('users')
-      .select('id, username, points, badge, country_code')
+      .select('id, username, display_name, points, badge, country_code')
       .order('points', { ascending: false })
       .limit(5),
   ])

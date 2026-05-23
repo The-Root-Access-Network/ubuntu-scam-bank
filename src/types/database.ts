@@ -300,8 +300,10 @@ export type Database = {
       users: {
         Row: {
           badge: string
+          bio: string | null
           country_code: string | null
           created_at: string
+          display_name: string | null
           email: string | null
           id: string
           is_moderator: boolean
@@ -311,8 +313,10 @@ export type Database = {
         }
         Insert: {
           badge?: string
+          bio?: string | null
           country_code?: string | null
           created_at?: string
+          display_name?: string | null
           email?: string | null
           id?: string
           is_moderator?: boolean
@@ -322,8 +326,10 @@ export type Database = {
         }
         Update: {
           badge?: string
+          bio?: string | null
           country_code?: string | null
           created_at?: string
+          display_name?: string | null
           email?: string | null
           id?: string
           is_moderator?: boolean

@@ -1,12 +1,12 @@
 // src/components/layout/Sidebar.tsx
 
 import { IconCode, IconTrophy } from '@tabler/icons-react';
-import { BADGE_META } from '@/lib/utils';
+import { BADGE_META, getInitials } from '@/lib/utils';
 import type { Tables } from '@/types/database';
 
 type LeaderboardUser = Pick<
   Tables<'users'>,
-  'id' | 'username' | 'points' | 'badge' | 'country_code'
+  'id' | 'username' | 'display_name' | 'points' | 'badge' | 'country_code'
 >;
 
 // Deterministic avatar colour derived from first character of username.
@@ -24,9 +24,9 @@ function avatarStyle(username: string) {
   return AVATAR_PALETTE[username.charCodeAt(0) % AVATAR_PALETTE.length];
 }
 
-function initials(username: string) {
-  return username.slice(0, 2).toUpperCase();
-}
+// function initials(username: string) {
+//   return username.slice(0, 2).toUpperCase();
+// }
 
 // Rank number colours matching the mockup
 const RANK_COLOR: Record<number, string> = {
@@ -100,13 +100,13 @@ export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
                     className='w-7.5 h-7.5 rounded-full flex items-center justify-center text-caption font-medium shrink-0'
                     style={{ background: av.bg, color: av.fg }}
                   >
-                    {initials(user.username)}
+                    {getInitials(user.display_name ?? null, user.username)}
                   </div>
 
                   {/* Name + sub */}
                   <div className='flex-1 min-w-0'>
                     <p className='text-body-sm font-medium text-fg truncate'>
-                      {user.username}
+                      {user.display_name ?? user.username ?? 'Unnamed'}
                     </p>
                     <p className='text-caption text-fg-muted truncate'>
                       {badge.label}
