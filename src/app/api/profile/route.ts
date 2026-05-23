@@ -59,7 +59,7 @@ export async function PATCH(request: NextRequest) {
     return Response.json(
       {
         success: false,
-        error: parsed.error.errors[0]?.message ?? 'Invalid input.',
+        error: parsed.error.issues[0]?.message ?? 'Invalid input.',
       },
       { status: 400 },
     );

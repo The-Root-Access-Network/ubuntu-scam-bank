@@ -16,7 +16,10 @@ export default function Nav() {
     >
       <Container className='py-3.5 flex items-center justify-between'>
         {/* Logo */}
-        <div className='flex items-center gap-2'>
+        <Link
+          href='/'
+          className='flex items-center gap-2 hover:opacity-80 transition-opacity duration-150'
+        >
           <div className='w-7 h-7 bg-brand rounded-lg flex items-center justify-center shrink-0'>
             <IconShieldCheck
               size={18}
@@ -30,7 +33,7 @@ export default function Nav() {
           <span className='hidden md:inline text-[11px] font-medium px-2 py-0.5 bg-brand-light text-brand-dark rounded-full'>
             by Ubuntu Bridge
           </span>
-        </div>
+        </Link>
 
         {/* Right side */}
         <div className='flex items-center gap-3 md:gap-5'>

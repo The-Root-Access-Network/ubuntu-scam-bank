@@ -6,7 +6,7 @@ import type { Tables } from '@/types/database';
 
 type LeaderboardUser = Pick<
   Tables<'users'>,
-  'id' | 'username' | 'points' | 'badge' | 'country_code'
+  'id' | 'username' | 'display_name' | 'points' | 'badge' | 'country_code'
 >;
 
 // Deterministic avatar colour derived from first character of username.
@@ -106,7 +106,7 @@ export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
                   {/* Name + sub */}
                   <div className='flex-1 min-w-0'>
                     <p className='text-body-sm font-medium text-fg truncate'>
-                      {user.username}
+                      {user.display_name ?? user.username ?? 'Unnamed'}
                     </p>
                     <p className='text-caption text-fg-muted truncate'>
                       {badge.label}
