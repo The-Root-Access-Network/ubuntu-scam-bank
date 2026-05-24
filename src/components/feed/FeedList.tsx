@@ -3,6 +3,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { IconCheck, IconEye } from '@tabler/icons-react';
 import { relativeTime, SEVERITY_LABELS, TYPE_META } from '@/lib/utils';
 import type { Tables } from '@/types/database';
@@ -73,10 +74,11 @@ export default function FeedList({ reports }: { reports: FeedReport[] }) {
             const loc = report.country_code ? ` · ${report.country_code}` : '';
 
             return (
-              <div
+              <Link
                 key={report.id}
+                href={`/reports/${report.id}`}
                 className={[
-                  'py-3',
+                  'block py-3 group',
                   i < filtered.length - 1 ? 'border-b border-stroke-faint' : '',
                 ].join(' ')}
               >
@@ -94,7 +96,7 @@ export default function FeedList({ reports }: { reports: FeedReport[] }) {
                 </div>
 
                 {/* Summary */}
-                <p className='text-body-sm text-fg leading-normal mb-1.5'>
+                <p className='text-body-sm text-fg leading-relaxed mb-1.5 group-hover:text-brand transition-colors duration-150'>
                   {report.summary ?? 'No summary available.'}
                 </p>
 
@@ -112,7 +114,7 @@ export default function FeedList({ reports }: { reports: FeedReport[] }) {
                     Severity: {SEVERITY_LABELS[report.severity] ?? '—'}
                   </span>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
