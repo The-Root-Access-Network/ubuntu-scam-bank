@@ -4,6 +4,7 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { COUNTRY_OPTIONS, detectCountryFromLocale } from '@/lib/countries';
 import {
   IconAlertCircle,
   IconArrowRight,
@@ -55,16 +56,6 @@ const SEVERITY_LEVELS = [
   { level: 5, label: 'Critical', color: '#A32D2D' },
 ] as const;
 
-const COUNTRIES = [
-  'Nigeria',
-  'United Kingdom',
-  'Ghana',
-  'South Africa',
-  'Kenya',
-  'United States',
-  'Other',
-];
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function SubmissionForm() {
@@ -75,7 +66,9 @@ export default function SubmissionForm() {
   const [content, setContent] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('phishing_email');
   const [severity, setSeverity] = useState<number>(1);
-  const [country, setCountry] = useState<string>('Nigeria');
+  const [country, setCountry] = useState<string>(
+    () => detectCountryFromLocale() || 'Nigeria',
+  );
   const [context, setContext] = useState<string>('');
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -309,9 +302,9 @@ export default function SubmissionForm() {
           onChange={(e) => setCountry(e.target.value)}
           className='text-body-xs border border-stroke rounded-md px-2 py-1 bg-canvas text-fg cursor-pointer'
         >
-          {COUNTRIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
+          {COUNTRY_OPTIONS.map(({ code, name }) => (
+            <option key={code} value={name}>
+              {name}
             </option>
           ))}
         </select>

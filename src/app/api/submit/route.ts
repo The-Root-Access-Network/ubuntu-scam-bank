@@ -4,21 +4,11 @@ import { NextRequest } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { nameToCode } from '@/lib/countries';
 import { uploadSubmissionFile, UploadError } from '@/lib/storage/upload';
 import { triageSubmission, hashContent } from '@/lib/ai/triage';
 import { calculatePoints, welcomeBonus } from '@/lib/points/calculate';
 import type { PointsLineItem } from '@/lib/points/calculate';
-
-// ── Country name → ISO 3166-1 alpha-2 ────────────────────────────────────────
-// Matches the COUNTRIES array in SubmissionForm.tsx exactly.
-const COUNTRY_CODES: Record<string, string> = {
-  Nigeria: 'NG',
-  'United Kingdom': 'GB',
-  Ghana: 'GH',
-  'South Africa': 'ZA',
-  Kenya: 'KE',
-  'United States': 'US',
-};
 
 // ── FormData validation schema ────────────────────────────────────────────────
 const SubmitSchema = z.object({
@@ -213,7 +203,7 @@ export async function POST(request: NextRequest) {
       type: triage.triage_failed ? formType : triage.type,
       severity: triage.triage_failed ? formSeverity : triage.severity,
       status: triage.triage_failed ? 'under_review' : 'published',
-      country_code: COUNTRY_CODES[country] ?? null,
+      country_code: nameToCode(country),
       summary: triage.summary || null,
       raw_content: fullContent,
       content_hash: contentHash,
