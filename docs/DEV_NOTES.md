@@ -337,3 +337,65 @@ Not a blocker for current development.
 - File upload to Supabase Storage ✅
 - /api/submit full implementation ✅
 - SubmissionForm wired to API ✅
+
+---
+
+## 2026-05-23
+
+### User profile — Phase 3 Step 1
+
+**Schema:**
+
+- `display_name` (text, max 50, nullable) and bio (text, max 300, nullable) added to users table via alter table
+- No trigger changes — `handle_new_user` leaves both as NULL
+- No new RLS policies needed — existing UPDATE policy covers new columns; SELECT using(true) makes them publicly readable
+
+**Architecture decisions:**
+
+- `getInitials()` moved to [utils.ts](../src/lib/utils.ts) — pure function, no client dependencies, so it can be imported by both server components (Sidebar) and client components (ProfileForm, NavAuthButton)
+- Initial mistake: exported `getInitials` from `ProfileForm.tsx` ('use client') — server components can't call functions from client files even if the function itself is pure
+- Lesson: utility functions with no browser API usage belong in `utils.ts` regardless of where they're first needed
+
+**Profile API route:**
+
+- `PATCH /api/profile` — partial update pattern, only writes fields that were sent, undefined values excluded from payload
+- `display_name` and `bio` trimmed at API level via `Zod .transform()`
+- country resolved to ISO code via `nameToCode()` before storage
+
+**NavAuthButton:**
+
+- Now fetches display_name from users table after auth
+- Supabase query on mount and on auth state change
+- Avatar is a Link to /profile (changed from plain anchor)
+
+**Sidebar:**
+
+- display_name shown as primary name, falls back to username
+- getInitials() imported from utils.ts
+
+### Report detail page — Phase 3 Step 2
+
+**RLS:**
+
+- indicators table had RLS enabled but no SELECT policy
+- Added: "Indicators for published reports are publicly readable" using exists() subquery on reports.status = 'published' — indicators for non-published reports stay hidden
+
+**View count:**
+
+- Incremented via admin client (bypasses RLS) on every page load
+- Read-then-write at MVP scale — atomic increment can come later
+- Displayed as `view_count + 1` on the page itself so the current visit is reflected immediately without a second fetch
+
+**TypeScript gotcha:**
+
+- Splitting a Supabase `.select()` string across lines with `+` caused type inference to fall back to GenericStringError
+- Fix: single unbroken string literal restores full type inference
+- Pattern to remember: never concatenate Supabase select strings
+
+**Feed cards:**
+
+- Wrapped in Next.js Link — group/group-hover for summary text colour transition on hover
+
+**Voting placeholder:**
+
+- Comment in report detail page marks where confirm/dispute buttons go in Phase 3 Step 3 — not yet built
