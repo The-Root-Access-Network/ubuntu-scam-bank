@@ -1,7 +1,6 @@
 // src/app/api/submit/route.ts
 
 import { NextRequest } from 'next/server';
-import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { nameToCode } from '@/lib/countries';
@@ -327,9 +326,6 @@ export async function POST(request: NextRequest) {
     ...pointsResult.breakdown,
     ...(welcomeItem ? [welcomeItem] : []),
   ];
-
-  // Invalidate the homepage cache so the feed updates immediately
-  revalidatePath('/');
 
   return Response.json({
     success: true,
