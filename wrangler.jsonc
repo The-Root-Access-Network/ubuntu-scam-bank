@@ -3,11 +3,15 @@
   "main": ".open-next/worker.js",
   "name": "ubuntu-scam-bank",
   "compatibility_date": "2026-05-15",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
+  "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS",
+  },
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+    },
   },
 }
