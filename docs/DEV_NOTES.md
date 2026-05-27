@@ -399,3 +399,26 @@ Not a blocker for current development.
 **Voting placeholder:**
 
 - Comment in report detail page marks where confirm/dispute buttons go in Phase 3 Step 3 — not yet built
+
+---
+
+## 2026-05-25
+
+### Cloudflare env vars — two separate sections (important)
+
+Cloudflare has two distinct places for environment variables:
+
+1. Settings → Build → Build Variables and Secrets
+   - Used during npm run build (Next.js build step)
+   - Required for `NEXT_PUBLIC_*` variables (inlined at build time)
+
+2. Settings → Variables and Secrets (runtime section)
+   - Used when the Worker is handling live requests
+   - Required for server-side secrets: `SUPABASE_SERVICE_ROLE_KEY`,
+     `ANTHROPIC_API_KEY`, etc.
+   - If missing here, `createAdminClient()` throws at runtime even
+     if the variable exists in the Build section
+
+Both sections need to have the complete set of variables.
+`NEXT_PUBLIC_*` variables should be in both (build + runtime).
+Secrets should be in the runtime section at minimum.
