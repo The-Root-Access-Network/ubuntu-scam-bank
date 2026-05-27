@@ -46,7 +46,7 @@ export default function Nav() {
               Feed
             </Link>
             <Link
-              href='#leaderboard'
+              href='/leaderboard'
               className='hover:text-fg transition-colors duration-150'
             >
               Leaderboard
