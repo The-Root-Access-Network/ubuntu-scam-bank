@@ -1,13 +1,30 @@
 // src/components/layout/Sidebar.tsx
 
+/**
+ * Sidebar is a server component that receives all necessary data as props from its parent page. This allows it to render the leaderboard and shield score without any client-side fetching, ensuring fast load times and a seamless user experience.
+ * 
+ * The leaderboard section displays the top contributors with their rank, avatar, name, badge, country, and points. The avatar colors are generated deterministically based on the username to maintain consistency across renders without needing additional data.
+ * 
+ * The shield score card is a client component nested within the sidebar. It receives the current user's profile as a prop and handles the display of their points and badge, as well as the progress towards the next tier. This separation allows for dynamic updates to the shield score without affecting the static leaderboard content.
+ * 
+ * The researcher access section provides information and a call-to-action for users interested in accessing the API, encouraging engagement from the security research community.
+ */
+
+import Link from 'next/link';
 import { IconCode, IconTrophy } from '@tabler/icons-react';
 import { BADGE_META, getInitials } from '@/lib/utils';
+import ShieldScoreCard from '@/components/layout/ShieldScoreCard';
 import type { Tables } from '@/types/database';
 
 type LeaderboardUser = Pick<
   Tables<'users'>,
   'id' | 'username' | 'display_name' | 'points' | 'badge' | 'country_code'
 >;
+
+type CurrentUser = Pick<
+  Tables<'users'>,
+  'username' | 'display_name' | 'points' | 'badge'
+> | null;
 
 // Deterministic avatar colour derived from first character of username.
 // Keeps avatars consistent across renders without needing stored preferences.
@@ -35,7 +52,13 @@ const RANK_COLOR: Record<number, string> = {
   3: '#993C1D', // bronze
 };
 
-export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
+export default function Sidebar({
+  topUsers,
+  currentUser,
+}: {
+  topUsers: LeaderboardUser[];
+  currentUser: CurrentUser;
+}) {
   return (
     <>
       {/* ── Leaderboard ──────────────────────────────────────────────── */}
@@ -124,33 +147,17 @@ export default function Sidebar({ topUsers }: { topUsers: LeaderboardUser[] }) {
           </div>
         )}
 
-        <button
-          type='button'
-          className='w-full mt-3 text-body-xs font-medium px-3.5 py-1.5 border border-stroke rounded-md bg-transparent text-fg hover:bg-canvas-subtle transition-colors duration-150 cursor-pointer'
+        {/* Now a Link, not a button */}
+        <Link
+          href='/leaderboard'
+          className='block w-full mt-3 text-body-xs font-medium px-3.5 py-1.5 border border-stroke rounded-md text-center text-fg hover:bg-canvas-subtle transition-colors duration-150 cursor-pointer'
         >
           View full leaderboard ↗
-        </button>
+        </Link>
       </div>
 
-      {/* ── Shield score ──────────────────────────────────────────────── */}
-      <div className='bg-canvas border border-stroke-faint rounded-lg p-5'>
-        <p className='text-label text-fg-muted uppercase tracking-label mb-3'>
-          Your shield score
-        </p>
-        {/* Auth not built yet — sign-in prompt */}
-        <div className='text-center py-3'>
-          <p className='text-body-sm text-fg-muted leading-relaxed'>
-            Sign in to track your score and see how you rank against other
-            contributors.
-          </p>
-          <button
-            type='button'
-            className='mt-3 inline-flex items-center gap-2 bg-brand text-white px-4 py-2 rounded-md text-body-xs font-medium hover:bg-brand-dark transition-colors duration-150 cursor-pointer'
-          >
-            Sign in
-          </button>
-        </div>
-      </div>
+      {/* ── Shield score — client island ──────────────────────────────── */}
+      <ShieldScoreCard user={currentUser} />
 
       {/* ── Researcher access ─────────────────────────────────────────── */}
       <div

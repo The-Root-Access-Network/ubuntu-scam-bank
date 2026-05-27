@@ -383,7 +383,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_monthly_leaderboard: {
+        Args: never
+        Returns: {
+          badge: string
+          country_code: string
+          display_name: string
+          id: string
+          monthly_points: number
+          username: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
