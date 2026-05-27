@@ -11,7 +11,12 @@ import { createClient } from '@/lib/supabase/server';
 // All page data fetched in one parallel request set.
 // Components receive pre-fetched props — no waterfall, no client fetching.
 async function getPageData() {
-  const supabase = await createClient()
+  const supabase = await createClient();
+
+  // Auth check for shield score
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const [
     reportsCount,
@@ -19,14 +24,13 @@ async function getPageData() {
     countryResult,
     feedResult,
     leaderboardResult,
+    profileResult,
   ] = await Promise.all([
     supabase
       .from('reports')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'published'),
-    supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true }),
+    supabase.from('users').select('*', { count: 'exact', head: true }),
     supabase
       .from('reports')
       .select('country_code')
@@ -34,7 +38,9 @@ async function getPageData() {
       .not('country_code', 'is', null),
     supabase
       .from('reports')
-      .select('id, type, severity, country_code, summary, confirm_count, view_count, submitted_at')
+      .select(
+        'id, type, severity, country_code, summary, confirm_count, view_count, submitted_at',
+      )
       .eq('status', 'published')
       .order('submitted_at', { ascending: false })
       .limit(20),
@@ -43,11 +49,19 @@ async function getPageData() {
       .select('id, username, display_name, points, badge, country_code')
       .order('points', { ascending: false })
       .limit(5),
-  ])
+    // Only fetch profile if signed in
+    user
+      ? supabase
+          .from('users')
+          .select('username, display_name, points, badge')
+          .eq('id', user.id)
+          .single()
+      : Promise.resolve({ data: null }),
+  ]);
 
   const uniqueCountries = new Set(
-    countryResult.data?.map(r => r.country_code) ?? [],
-  ).size
+    countryResult.data?.map((r) => r.country_code) ?? [],
+  ).size;
 
   return {
     stats: {
@@ -57,11 +71,12 @@ async function getPageData() {
     },
     feedReports: feedResult.data ?? [],
     topUsers: leaderboardResult.data ?? [],
-  }
+    currentUser: profileResult.data ?? null,
+  };
 }
 
 export default async function HomePage() {
-  const { stats, feedReports, topUsers } = await getPageData();
+  const { stats, feedReports, topUsers, currentUser } = await getPageData();
 
   return (
     <div className='min-h-dvh bg-canvas-subtle'>
@@ -120,7 +135,6 @@ export default async function HomePage() {
            * access cards will get dedicated pages in Phase 2.
            */}
           <div className='grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-3.5'>
-
             {/* Left column */}
             <div className='flex flex-col gap-3.5'>
               <SubmissionForm />
@@ -129,12 +143,9 @@ export default async function HomePage() {
 
             {/* Right sidebar — desktop only */}
             <aside className='hidden lg:flex flex-col gap-3.5'>
-              <Sidebar topUsers={topUsers} />
-              {/* Leaderboard card */}
-              {/* Shield score card */}
-              {/* Researcher access card */}
+              <Sidebar topUsers={topUsers} currentUser={currentUser} />
+              {/* Leaderboard, ShieldScore and Researcher access card */}
             </aside>
-
           </div>
         </Container>
       </main>
