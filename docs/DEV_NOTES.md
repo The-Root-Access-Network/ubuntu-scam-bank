@@ -399,3 +399,115 @@ Not a blocker for current development.
 **Voting placeholder:**
 
 - Comment in report detail page marks where confirm/dispute buttons go in Phase 3 Step 3 — not yet built
+
+---
+
+## 2026-05-25
+
+### Cloudflare env vars — two separate sections (important)
+
+Cloudflare has two distinct places for environment variables:
+
+1. Settings → Build → Build Variables and Secrets
+   - Used during npm run build (Next.js build step)
+   - Required for `NEXT_PUBLIC_*` variables (inlined at build time)
+
+2. Settings → Variables and Secrets (runtime section)
+   - Used when the Worker is handling live requests
+   - Required for server-side secrets: `SUPABASE_SERVICE_ROLE_KEY`,
+     `ANTHROPIC_API_KEY`, etc.
+   - If missing here, `createAdminClient()` throws at runtime even
+     if the variable exists in the Build section
+
+Both sections need to have the complete set of variables.
+`NEXT_PUBLIC_*` variables should be in both (build + runtime).
+Secrets should be in the runtime section at minimum.
+
+---
+
+## 2026-05-27
+
+### Community voting — Phase 3 Step 3
+
+**RLS policies on votes table:**
+
+- INSERT: authenticated users only, own user_id, report must be published — enforced via with check() subquery
+- SELECT: public (using true) — needed to check existing votes
+- unique (`report_id`, `user_id`) constraint in schema enforces one vote per user at DB level — no application-level check needed
+- `sync_vote_counts` trigger already in schema — fires on insert, increments confirm_count or dispute_count on reports automatically
+
+**Vote API route (POST `/api/reports/[id]/vote`):**
+
+- Auth check via `createClient()` first, then `createAdminClient()` for the insert — same pattern as submit route
+- try/catch around `createAdminClient()` explicitly — lesson from the Cloudflare env vars production debugging
+- Report existence check filters by status = `'published'` — `under_review` reports return 404, not 500
+- Own-report guard: 403 if `submitted_by` matches `user.id`
+- Duplicate vote returns 409 via unique constraint code '23505'
+- Trigger handles count updates — no manual increment in route
+
+**VoteButtons client component:**
+
+- Three distinct render states: signed-out (prompt), own report (read-only counts), voteable (confirm/dispute buttons)
+- Optimistic count update on client — DB counts updated by trigger server-side, no refetch needed
+- State machine: idle → loading → confirmed/disputed/error
+- Buttons disabled after voting — hasVoted guard prevents double-click
+- Sign in prompt uses plain text (no link) — nav has visible Sign in button, linking to / was confusing
+
+**Report detail page updates:**
+
+- `submitted_by` added to `getReport()` select string
+- Auth check added to page: isOwnReport and isSignedIn derived server-side and passed as props to VoteButtons
+- `submitted_by` is `string | null` — `isOwnReport` correctly false when null (anonymous or deleted submitter)
+- VoteButtons replaces the placeholder comment from Phase 3 Step 2
+
+**Smoke test results — all passing:**
+
+- Signed-out user: sign-in prompt shown ✅
+- Report submitter: read-only counts shown ✅
+- Different signed-in user: confirm/dispute buttons shown ✅
+- Confirm vote: optimistic count update, DB row confirmed ✅
+- Duplicate vote: 409 returned, "already voted" message shown ✅
+- Dispute path: working correctly ✅
+- under_review report by direct URL: 404 returned ✅
+
+### Leaderboard page and Shield Score card — Phase 3 Step 4
+
+**SQL function `get_monthly_leaderboard()`:**
+
+- security definer + set search_path = public — standard safe pattern
+- filter (where pl.delta > 0) excludes spam penalties from monthly sum
+- having ... > 0 filters users with zero monthly points
+- char(2) for country_code — explicit length required to avoid silent truncation (char without length defaults to char(1))
+- grant execute to anon, authenticated — required for Supabase `.rpc()` to call the function from the client
+
+**Leaderboard page (/leaderboard):**
+
+- Tab system uses searchParams — tab=global (default), tab=monthly, tab=NG/GB/GH/ZA/US/KE for country filters
+- Global and country tabs query users table directly (points column)
+- Monthly tab calls `get_monthly_leaderboard()` via `supabase.rpc()`
+- Empty states per tab type: monthly, country-specific, or global
+- AVATAR_PALETTE and RANK_COLOR duplicated from Sidebar — acceptable for now, candidate for a shared constants file later
+
+**ShieldScoreCard:**
+
+- Extracted from Sidebar into its own client component (needs useState for AuthModal)
+- `TIER_BOUNDS` array mirrors badge thresholds from DB trigger — intentional duplication for frontend progress bar; update both if thresholds change
+- `getProgress()` handles Sage (next: null) — shows "Maximum tier"
+- Signed-out state shows Sign in button that triggers `AuthModal`
+- Authenticated state shows points, badge pill, and progress bar
+
+**Sidebar updates:**
+
+- ShieldScoreCard imported and wired — replaces the static sign-in prompt that was previously hardcoded
+- `currentUser` prop added — passed from `page.tsx` server fetch
+- "View full leaderboard" changed from `button` to `Link` → `/leaderboard`
+
+**Nav updates:**
+
+- Leaderboard nav link changed from `#leaderboard` anchor to `/leaderboard` page route
+
+**Homepage (`page.tsx`):**
+
+- Auth check added to `getPageData()` for shield score
+- profileResult conditional fetch — only queries users table if user is signed in
+- currentUser passed to Sidebar as prop

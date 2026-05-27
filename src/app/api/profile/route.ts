@@ -87,8 +87,20 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
-  // ── Write ─────────────────────────────────────────────────────────────────
-  const admin = createAdminClient();
+  // ── Write ─────────────────────────────────────────────────────────────────────
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (err) {
+    console.error('[profile] createAdminClient failed:', err);
+    return Response.json(
+      {
+        success: false,
+        error: 'Server configuration error. Please try again.',
+      },
+      { status: 500 },
+    );
+  }
 
   const { data: updatedUser, error } = await admin
     .from('users')

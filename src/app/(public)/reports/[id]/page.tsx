@@ -1,5 +1,18 @@
 // src/app/(public)/reports/[id]/page.tsx
 
+/**
+ * Report detail page. Displays all information about a single report, including:
+ * - Summary and metadata (type, severity, country, AI tags)
+ * - Indicators of compromise (grouped by type)
+ * - Voting buttons with current counts
+ * - View count and submission time
+ *
+ * Also increments the view count on each page load.
+ *
+ * Data fetching is done server-side for SEO and performance. The voting buttons
+ * are a client component that calls an API route to cast votes.
+ */
+
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -12,6 +25,7 @@ import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { TYPE_META, SEVERITY_LABELS, relativeTime } from '@/lib/utils';
+import VoteButtons from '@/components/reports/VoteButtons';
 import type { Metadata } from 'next';
 
 // ── Static display maps ───────────────────────────────────────────────────────
@@ -43,7 +57,7 @@ async function getReport(id: string) {
     supabase
       .from('reports')
       .select(
-        'id, type, severity, country_code, summary, ai_tags, ai_confidence, confirm_count, dispute_count, view_count, is_novel, submitted_at',
+        'id, type, severity, country_code, summary, ai_tags, ai_confidence, confirm_count, dispute_count, view_count, is_novel, submitted_at, submitted_by',
       )
       .eq('id', id)
       .eq('status', 'published')
@@ -103,12 +117,25 @@ export default async function ReportPage({
 
   const { report, indicators } = data;
 
+  // ── Auth check for voting — must be inside the request scope ─────────────
+  const authClient = await createClient();
+  const {
+    data: { user },
+  } = await authClient.auth.getUser();
+
+  const isOwnReport = !!user && user.id === report.submitted_by;
+  const isSignedIn = !!user;
+
   // Increment view_count — atomic enough for a counter at MVP scale
-  const admin = createAdminClient();
-  await admin
-    .from('reports')
-    .update({ view_count: (report.view_count ?? 0) + 1 })
-    .eq('id', report.id);
+  try {
+    const admin = createAdminClient();
+    await admin
+      .from('reports')
+      .update({ view_count: (report.view_count ?? 0) + 1 })
+      .eq('id', report.id);
+  } catch (err) {
+    console.error('[report-detail] view_count update failed:', err);
+  }
 
   // Group indicators by type for section display
   const grouped = indicators.reduce<Record<string, string[]>>((acc, ind) => {
@@ -222,8 +249,14 @@ export default async function ReportPage({
               </div>
             )}
 
-            {/* ── Voting placeholder ─────────────────────────────────────── */}
-            {/* Phase 3 Step 3 — confirm/dispute buttons go here */}
+            {/* ── Voting ─────────────────────────────────────────────────────── */}
+            <VoteButtons
+              reportId={report.id}
+              confirmCount={report.confirm_count}
+              disputeCount={report.dispute_count}
+              isOwnReport={isOwnReport}
+              isSignedIn={isSignedIn}
+            />
 
             {/* ── Footer meta ────────────────────────────────────────────── */}
             <div className='border-t border-stroke-faint pt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-fg-muted'>
