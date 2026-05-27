@@ -1,5 +1,15 @@
 // src/components/layout/Sidebar.tsx
 
+/**
+ * Sidebar is a server component that receives all necessary data as props from its parent page. This allows it to render the leaderboard and shield score without any client-side fetching, ensuring fast load times and a seamless user experience.
+ * 
+ * The leaderboard section displays the top contributors with their rank, avatar, name, badge, country, and points. The avatar colors are generated deterministically based on the username to maintain consistency across renders without needing additional data.
+ * 
+ * The shield score card is a client component nested within the sidebar. It receives the current user's profile as a prop and handles the display of their points and badge, as well as the progress towards the next tier. This separation allows for dynamic updates to the shield score without affecting the static leaderboard content.
+ * 
+ * The researcher access section provides information and a call-to-action for users interested in accessing the API, encouraging engagement from the security research community.
+ */
+
 import Link from 'next/link';
 import { IconCode, IconTrophy } from '@tabler/icons-react';
 import { BADGE_META, getInitials } from '@/lib/utils';

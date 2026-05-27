@@ -469,3 +469,45 @@ Secrets should be in the runtime section at minimum.
 - Duplicate vote: 409 returned, "already voted" message shown ✅
 - Dispute path: working correctly ✅
 - under_review report by direct URL: 404 returned ✅
+
+### Leaderboard page and Shield Score card — Phase 3 Step 4
+
+**SQL function `get_monthly_leaderboard()`:**
+
+- security definer + set search_path = public — standard safe pattern
+- filter (where pl.delta > 0) excludes spam penalties from monthly sum
+- having ... > 0 filters users with zero monthly points
+- char(2) for country_code — explicit length required to avoid silent truncation (char without length defaults to char(1))
+- grant execute to anon, authenticated — required for Supabase `.rpc()` to call the function from the client
+
+**Leaderboard page (/leaderboard):**
+
+- Tab system uses searchParams — tab=global (default), tab=monthly, tab=NG/GB/GH/ZA/US/KE for country filters
+- Global and country tabs query users table directly (points column)
+- Monthly tab calls `get_monthly_leaderboard()` via `supabase.rpc()`
+- Empty states per tab type: monthly, country-specific, or global
+- AVATAR_PALETTE and RANK_COLOR duplicated from Sidebar — acceptable for now, candidate for a shared constants file later
+
+**ShieldScoreCard:**
+
+- Extracted from Sidebar into its own client component (needs useState for AuthModal)
+- `TIER_BOUNDS` array mirrors badge thresholds from DB trigger — intentional duplication for frontend progress bar; update both if thresholds change
+- `getProgress()` handles Sage (next: null) — shows "Maximum tier"
+- Signed-out state shows Sign in button that triggers `AuthModal`
+- Authenticated state shows points, badge pill, and progress bar
+
+**Sidebar updates:**
+
+- ShieldScoreCard imported and wired — replaces the static sign-in prompt that was previously hardcoded
+- `currentUser` prop added — passed from `page.tsx` server fetch
+- "View full leaderboard" changed from `button` to `Link` → `/leaderboard`
+
+**Nav updates:**
+
+- Leaderboard nav link changed from `#leaderboard` anchor to `/leaderboard` page route
+
+**Homepage (`page.tsx`):**
+
+- Auth check added to `getPageData()` for shield score
+- profileResult conditional fetch — only queries users table if user is signed in
+- currentUser passed to Sidebar as prop

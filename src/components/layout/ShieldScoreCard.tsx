@@ -1,5 +1,17 @@
 // src/components/layout/ShieldScoreCard.tsx
 
+/**
+ * ShieldScoreCard is a client component because it includes the auth prompt and progress bar animation, both of which require interactivity and state.
+ * 
+ * It receives the current user's profile as a prop from the parent page, which
+ * is a server component. This way we avoid any client-side fetching or waterfall
+ * data loading — all data is ready on first render.
+ * 
+ * The progress bar animates smoothly to the new width whenever the points or badge change, creating a dynamic and rewarding user experience as they contribute more.
+ * 
+ * The badge thresholds and next tier labels are defined in constants at the top of the file, making it easy to adjust the gamification mechanics without digging through the rendering logic.
+ */
+
 'use client';
 
 import { useState } from 'react';

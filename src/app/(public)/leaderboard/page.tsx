@@ -1,5 +1,15 @@
 // src/app/(public)/leaderboard/page.tsx
 
+/**
+ * Leaderboard page showing top contributors globally, by country, and for the current month. Users can easily see how they rank against others and track their progress towards the next badge tier.
+ * 
+ * Data is fetched server-side in one batch to avoid waterfalls and ensure fast load times. The page supports tabbed navigation between global, monthly, and country-specific leaderboards, with the active tab reflected in the URL for easy sharing.
+ * 
+ * Each leaderboard entry displays the contributor's rank, avatar (with deterministic colors), name, badge, country, and points. The design is responsive, with certain details hidden on smaller screens to maintain readability.
+ * 
+ * The page also includes a footer summarizing the current view, such as the number of contributors shown and the scope of the leaderboard (e.g. "Showing 50 contributors · Global · All time").
+ */
+
 import Link from 'next/link';
 import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
