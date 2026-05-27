@@ -422,3 +422,50 @@ Cloudflare has two distinct places for environment variables:
 Both sections need to have the complete set of variables.
 `NEXT_PUBLIC_*` variables should be in both (build + runtime).
 Secrets should be in the runtime section at minimum.
+
+---
+
+## 2026-05-27
+
+### Community voting — Phase 3 Step 3
+
+**RLS policies on votes table:**
+
+- INSERT: authenticated users only, own user_id, report must be published — enforced via with check() subquery
+- SELECT: public (using true) — needed to check existing votes
+- unique (`report_id`, `user_id`) constraint in schema enforces one vote per user at DB level — no application-level check needed
+- `sync_vote_counts` trigger already in schema — fires on insert, increments confirm_count or dispute_count on reports automatically
+
+**Vote API route (POST `/api/reports/[id]/vote`):**
+
+- Auth check via `createClient()` first, then `createAdminClient()` for the insert — same pattern as submit route
+- try/catch around `createAdminClient()` explicitly — lesson from the Cloudflare env vars production debugging
+- Report existence check filters by status = `'published'` — `under_review` reports return 404, not 500
+- Own-report guard: 403 if `submitted_by` matches `user.id`
+- Duplicate vote returns 409 via unique constraint code '23505'
+- Trigger handles count updates — no manual increment in route
+
+**VoteButtons client component:**
+
+- Three distinct render states: signed-out (prompt), own report (read-only counts), voteable (confirm/dispute buttons)
+- Optimistic count update on client — DB counts updated by trigger server-side, no refetch needed
+- State machine: idle → loading → confirmed/disputed/error
+- Buttons disabled after voting — hasVoted guard prevents double-click
+- Sign in prompt uses plain text (no link) — nav has visible Sign in button, linking to / was confusing
+
+**Report detail page updates:**
+
+- `submitted_by` added to `getReport()` select string
+- Auth check added to page: isOwnReport and isSignedIn derived server-side and passed as props to VoteButtons
+- `submitted_by` is `string | null` — `isOwnReport` correctly false when null (anonymous or deleted submitter)
+- VoteButtons replaces the placeholder comment from Phase 3 Step 2
+
+**Smoke test results — all passing:**
+
+- Signed-out user: sign-in prompt shown ✅
+- Report submitter: read-only counts shown ✅
+- Different signed-in user: confirm/dispute buttons shown ✅
+- Confirm vote: optimistic count update, DB row confirmed ✅
+- Duplicate vote: 409 returned, "already voted" message shown ✅
+- Dispute path: working correctly ✅
+- under_review report by direct URL: 404 returned ✅
