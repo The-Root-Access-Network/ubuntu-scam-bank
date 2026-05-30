@@ -177,12 +177,12 @@ export default function Sidebar({
         <div className='bg-canvas-subtle border border-stroke-faint rounded-md px-3 py-2.5 font-mono text-caption text-fg-muted mb-3 overflow-x-auto'>
           GET /api/v1/reports?type=phishing&amp;country=NG&amp;limit=50
         </div>
-        <button
-          type='button'
-          className='w-full text-body-xs font-medium px-3.5 py-1.5 border border-stroke rounded-md bg-transparent text-fg hover:bg-canvas-subtle transition-colors duration-150 cursor-pointer'
+        <Link
+          href='researchers/apply'
+          className='w-full block text-body-xs font-medium px-3.5 py-1.5 border border-stroke rounded-md text-center text-fg hover:bg-canvas-subtle transition-colors duration-150'
         >
           Request API key ↗
-        </button>
+        </Link>
       </div>
     </>
   );
