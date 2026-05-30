@@ -13,10 +13,13 @@ const ApplicationSchema = z.object({
     .min(50, 'Please describe your intended use in at least 50 characters')
     .max(2000),
   portfolio_url: z
-    .string()
-    .url('Please enter a valid URL')
+    .union([
+      z.string().url('Please enter a valid URL'),
+      z.literal(''),
+      z.null(),
+    ])
     .optional()
-    .nullable(),
+    .transform((v) => v || null),
 });
 
 export async function POST(request: NextRequest) {

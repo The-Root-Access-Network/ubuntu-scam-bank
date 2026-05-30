@@ -52,13 +52,17 @@ async function validateApiKey(authHeader: string | null) {
       error: 'This API key has been revoked.',
     };
 
-  // Update last_used_at — non-blocking, non-fatal
-  admin
-    .from('api_keys')
-    .update({ last_used_at: new Date().toISOString() })
-    .eq('id', apiKey.id)
-    .then(() => {})
-    .catch(() => {});
+  // Update last_used_at — non-blocking, non-fatal, awaited directly.
+  // Supabase query builders return PromiseLike, not Promise, so .catch() isn't
+  // available without wrapping. Awaiting is simpler and safe on Workers.
+  try {
+    await admin
+      .from('api_keys')
+      .update({ last_used_at: new Date().toISOString() })
+      .eq('id', apiKey.id);
+  } catch {
+    // Non-fatal — last_used_at is an audit field only
+  }
 
   return { valid: true as const, rateLimit: apiKey.rate_limit_rpm };
 }
@@ -116,7 +120,10 @@ export async function GET(request: NextRequest) {
   if (to) query = query.lte('published_at', to);
   if (novel === 'true') query = query.eq('is_novel', true);
 
-  // Cursor: base64-encoded ISO timestamp from the previous page's last item
+  // Cursor pagination — cursor is base64-encoded published_at timestamp.
+  // TODO: if two reports share identical published_at values, this cursor may
+  // skip or repeat entries. At current volume this is unlikely; fix with
+  // a composite (published_at, id) cursor when it matters.
   if (cursor) {
     try {
       query = query.lt('published_at', atob(cursor));
@@ -175,6 +182,14 @@ export async function GET(request: NextRequest) {
 
   return Response.json(
     { data, meta: { total: data.length, limit, next_cursor: nextCursor } },
-    { headers: { ...CORS, 'X-RateLimit-Limit': String(auth.rateLimit) } },
+    {
+      headers: {
+        ...CORS,
+        'X-RateLimit-Limit': String(auth.rateLimit),
+        // TODO Phase 4: enforce rate_limit_rpm using Cloudflare rate limiting
+        // rules or an Upstash Redis counter. Currently the header informs
+        // clients of their limit but nothing blocks them from exceeding it.
+      },
+    },
   );
 }
