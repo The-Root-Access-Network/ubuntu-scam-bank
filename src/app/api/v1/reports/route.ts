@@ -1,6 +1,7 @@
 // src/app/api/v1/reports/route.ts
 
 import { NextRequest } from 'next/server';
+import md5 from 'blueimp-md5';
 import { createAdminClient } from '@/lib/supabase/server';
 
 // ── API key validation ────────────────────────────────────────────────────────
@@ -20,11 +21,12 @@ async function validateApiKey(authHeader: string | null) {
     return { valid: false as const, rateLimit: 0, error: 'API key is empty.' };
 
   // Hash the provided key for lookup
-  const encoded = new TextEncoder().encode(rawKey);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
-  const keyHash = Array.from(new Uint8Array(hashBuffer))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+  // const encoded = new TextEncoder().encode(rawKey);
+  // const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
+  // const keyHash = Array.from(new Uint8Array(hashBuffer))
+  //   .map((b) => b.toString(16).padStart(2, '0'))
+  //   .join('');
+  const keyHash = md5(rawKey);
 
   let admin;
   try {
