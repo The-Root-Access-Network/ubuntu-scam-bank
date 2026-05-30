@@ -527,3 +527,64 @@ select approve_researcher_application('the-application-uuid-here');
 The function returns the raw key in the results panel. Copy it, email it to the researcher. That's the full admin flow for Phase 3.
 
 - TODO: Check is there can be an automated process of sending the key to the researcher as soon as it has been approved by an admin in the SQL Editor in the Supabase dashboard.
+
+---
+
+## 2026-05-30
+
+### Researcher API keys — Phase 3 Step 5
+
+**Schema:**
+
+- `researcher_applications` table — `user_id`, `full_name`, `organisation`, `role`, `use_case`, `portfolio_url`, status (pending/approved/rejected), `reviewed_by`, `reviewed_at`
+- RLS: authenticated INSERT (own user_id), SELECT (own rows only)
+- index on user_id and status
+
+**approve_researcher_application() function:**
+
+- Originally used pgcrypto (gen_random_bytes + sha256 digest) — both failed on Supabase free tier, extensions not available
+- Replaced with: `gen_random_uuid()` x2 for key generation (no extension needed), md5() for hashing (PostgreSQL core built-in)
+- Key format: `sv*live* + 64 hex chars` (two UUIDs, dashes stripped)
+- `md5()` is acceptable here — this is a lookup hash not a password. If stronger hashing is needed later, upgrade to pgcrypto when available or handle hashing in application code instead
+- Returns raw key once — TRAN must copy it and email to researcher
+- Updates `researcher_applications.status = 'approved'`
+- Sets `users.is_researcher = true`
+
+**API key delivery — currently manual:**
+
+- Admin opens Supabase SQL Editor
+- Finds application UUID in researcher_applications table
+- Runs: select approve_researcher_application('uuid-here')
+- Copies the returned sv*live* key from the results panel
+- Emails key manually to researcher at their registered email
+- Key is never recoverable from the database after this point
+
+**Automated delivery — tracked as GitHub issue:**
+
+- Target approach: Resend (free tier) + Supabase webhook or Edge Function fires on approval, sends key via email
+- Longer term: admin UI at /admin/applications with Approve/Reject buttons, removing SQL Editor dependency entirely
+
+**Researcher API (`/api/v1/reports`):**
+
+- Bearer token auth — key hashed with md5 (matching the approval function) and looked up in api_keys table
+- CORS headers: Access-Control-Allow-Origin: \* (public API)
+- Query params: type, country, severity, from, to, is_novel, limit (max 200), cursor
+- Cursor pagination: base64-encoded published_at timestamp
+  TODO: cursor may skip/repeat entries if two reports share identical published_at — acceptable at MVP scale
+- Indicators batch-fetched per page and embedded in response
+- `last_used_at` update is fire-and-forget — may not persist on Workers if the instance exits before the Promise resolves
+- Rate limiting: `rate_limit_rpm` stored and returned in X-RateLimit-Limit header but not enforced yet
+  TODO: enforce via Cloudflare rate limiting rules or Redis
+
+**Hashing consistency:**
+
+- PostgreSQL function: `md5(v_raw_key)`
+- API route: blueimp-md5 npm package (md5(rawKey))
+- Web Crypto API does not support MD5 natively — hence the npm dependency. If moving to SHA-256 later, update both the function and the API route together
+
+**Apply page:**
+
+- Unauthenticated users see marketing content + sign-in notice instead of a hard redirect to `/` — nav Sign in button is visible
+- Pending/approved: form hidden, status banner shown
+- Rejected: contact email shown for appeals
+- Guard: .in('status', ['pending', 'approved']) — rejected users can reapply

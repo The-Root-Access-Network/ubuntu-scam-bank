@@ -1,6 +1,5 @@
 // src/app/(public)/researchers/apply/page.tsx
 
-import { redirect } from 'next/navigation';
 import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
 import ApplicationForm from '@/components/researchers/ApplicationForm';
@@ -15,10 +14,78 @@ export default async function ResearchersApplyPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // API access requires an account
-  if (!user) redirect('/');
+  const marketingCards = [
+    {
+      label: 'Structured data',
+      desc: 'Clean JSON feed of classified, anonymised scam reports',
+    },
+    {
+      label: 'IOC extraction',
+      desc: 'Domains, email addresses, phone numbers, URLs per report',
+    },
+    {
+      label: 'Always free',
+      desc: 'No cost for research, NGO, and academic use',
+    },
+  ];
 
-  // Check for an existing application
+  const header = (
+    <div className='mb-8'>
+      <span className='inline-flex items-center text-caption text-brand bg-brand-light px-3 py-1 rounded-full mb-4'>
+        Free access · No credit card required
+      </span>
+      <h1 className='text-heading font-medium text-fg mb-2'>
+        Apply for researcher API access
+      </h1>
+      <p className='text-body-sm text-fg-muted leading-relaxed max-w-135'>
+        The UbuntuScamBank API gives security researchers, NGOs, journalists,
+        and academics structured access to real-world scam intelligence data.
+        Access is merit-based and free.
+      </p>
+    </div>
+  );
+
+  const cards = (
+    <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8'>
+      {marketingCards.map(({ label, desc }) => (
+        <div
+          key={label}
+          className='bg-canvas border border-stroke-faint rounded-lg p-4'
+        >
+          <p className='text-body-sm font-medium text-fg mb-1'>{label}</p>
+          <p className='text-body-xs font-medium text-fg-muted leading-relaxed'>{desc}</p>
+        </div>
+      ))}
+    </div>
+  );
+
+  // Unauthenticated — show marketing content + sign-in notice
+  if (!user) {
+    return (
+      <div className='min-h-dvh bg-canvas-subtle'>
+        <Nav />
+        <main>
+          <Container className='py-8 md:py-12 max-w-185'>
+            {header}
+            {cards}
+            <div className='bg-canvas border border-stroke-faint rounded-lg p-8 text-center'>
+              <p className='text-[16px] font-medium text-fg mb-2'>
+                Sign in to apply
+              </p>
+              <p className='text-body-sm text-fg-muted max-w-md mx-auto'>
+                A UbuntuScamBank account is required to submit an application
+                and track its status. Use the{' '}
+                <span className='font-medium text-fg'>Sign in</span> button in
+                the top-right corner of the page.
+              </p>
+            </div>
+          </Container>
+        </main>
+      </div>
+    );
+  }
+
+  // Authenticated — check for existing application
   const { data: existing } = await supabase
     .from('researcher_applications')
     .select('id, status')
@@ -33,53 +100,11 @@ export default async function ResearchersApplyPage() {
   return (
     <div className='min-h-dvh bg-canvas-subtle'>
       <Nav />
-
       <main>
         <Container className='py-8 md:py-12 max-w-185'>
-          {/* Page header */}
-          <div className='mb-8'>
-            <span className='inline-flex items-center text-[12px] text-brand bg-brand-light px-3 py-1 rounded-full mb-4'>
-              Free access · No credit card required
-            </span>
-            <h1 className='text-[22px] font-medium text-fg mb-2'>
-              Apply for researcher API access
-            </h1>
-            <p className='text-body-sm text-fg-muted leading-relaxed max-w-135'>
-              The UbuntuScamBank API gives security researchers, NGOs,
-              journalists, and academics structured access to real-world scam
-              intelligence data. Access is merit-based and free.
-            </p>
-          </div>
+          {header}
+          {cards}
 
-          {/* What you get */}
-          <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8'>
-            {[
-              {
-                label: 'Structured data',
-                desc: 'Clean JSON feed of classified, anonymised scam reports',
-              },
-              {
-                label: 'IOC extraction',
-                desc: 'Domains, email addresses, phone numbers, URLs per report',
-              },
-              {
-                label: 'Always free',
-                desc: 'No cost for research, NGO, and academic use',
-              },
-            ].map(({ label, desc }) => (
-              <div
-                key={label}
-                className='bg-canvas border border-stroke-faint rounded-lg p-4'
-              >
-                <p className='text-[13px] font-medium text-fg mb-1'>{label}</p>
-                <p className='text-[12px] text-fg-muted leading-relaxed'>
-                  {desc}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* Existing application state */}
           {existing?.status === 'pending' && (
             <div className='bg-warning-bg border border-warning text-warning-text rounded-lg px-4 py-3.5 text-body-xs mb-6'>
               Your application is under review. We&apos;ll be in touch within 5
@@ -105,7 +130,6 @@ export default async function ResearchersApplyPage() {
             </div>
           )}
 
-          {/* Form — hidden if pending or approved */}
           {!alreadyPendingOrApproved && (
             <div className='bg-canvas border border-stroke-faint rounded-lg p-6 md:p-8'>
               <h2 className='text-[16px] font-medium text-fg mb-6'>
