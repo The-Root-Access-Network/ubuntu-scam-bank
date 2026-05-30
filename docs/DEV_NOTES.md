@@ -511,3 +511,19 @@ Secrets should be in the runtime section at minimum.
 - Auth check added to `getPageData()` for shield score
 - profileResult conditional fetch — only queries users table if user is signed in
 - currentUser passed to Sidebar as prop
+
+---
+
+## 2026-05-29
+
+### Researcher Approval
+
+How TRAN approves a researcher going forward: open the SQL Editor in the Supabase dashboard, find the application ID from the `researcher_applications` table, then run:
+
+```sql
+select approve_researcher_application('the-application-uuid-here');
+```
+
+The function returns the raw key in the results panel. Copy it, email it to the researcher. That's the full admin flow for Phase 3.
+
+- TODO: Check is there can be an automated process of sending the key to the researcher as soon as it has been approved by an admin in the SQL Editor in the Supabase dashboard.
