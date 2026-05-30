@@ -255,6 +255,63 @@ export type Database = {
           },
         ]
       }
+      researcher_applications: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          organisation: string
+          portfolio_url: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role: string
+          status: string
+          use_case: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+          organisation: string
+          portfolio_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role: string
+          status?: string
+          use_case: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          organisation?: string
+          portfolio_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role?: string
+          status?: string
+          use_case?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "researcher_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "researcher_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submissions: {
         Row: {
           bonus_reason: string | null
@@ -383,6 +440,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_researcher_application: {
+        Args: { p_application_id: string }
+        Returns: string
+      }
       get_monthly_leaderboard: {
         Args: never
         Returns: {
