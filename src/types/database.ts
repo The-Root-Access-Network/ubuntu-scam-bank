@@ -455,6 +455,10 @@ export type Database = {
           username: string
         }[]
       }
+      reject_researcher_application: {
+        Args: { p_application_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
