@@ -146,9 +146,9 @@ Rate limit: 60 requests/minute per key (stored in api_keys.rate_limit_rpm — no
 
 | Badge             | Threshold         | Visual          | Unlocks                                  |
 | ----------------- | ----------------- | --------------- | ---------------------------------------- |
-| 🛡 Watcher        | 0–2,499 pts       | Grey shield     | Submit, browse feed                      |
-| 🛡 Guardian       | 2,499-4,999 pts   | Green shield    | Community voting                         |
-| 🛡 Sentinel       | 5,000–9,999 pts   | Blue shield     | Campaign tagging, advanced filters       |
+| 🛡 Watcher         | 0–2,499 pts       | Grey shield     | Submit, browse feed                      |
+| 🛡 Guardian        | 2,499-4,999 pts   | Green shield    | Community voting                         |
+| 🛡 Sentinel        | 5,000–9,999 pts   | Blue shield     | Campaign tagging, advanced filters       |
 | ⭐ Elite Sentinel | 10,000–19,999 pts | Gold shield     | Moderator queue, STIX export, API access |
 | 🔱 Sage           | 20,000+ pts       | Platinum shield | Strategic advisor role                   |
 
