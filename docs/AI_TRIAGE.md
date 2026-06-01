@@ -4,7 +4,7 @@
 >
 > ---
 
-## Powered by Claude API (claude-sonnet-4-20250514)
+## Powered by Claude API (claude-sonnet-4-6)
 
 ---
 
@@ -30,123 +30,98 @@ Write to database + award points
 
 ---
 
-## Pipeline Implementation (Python)
+## Pipeline Implementation (TypeScript)
 
-```python
-# scamvault_triage.py
-import anthropic, json
+```typescript
+// src/lib/ai/triage.ts
+import { Anthropic } from '@anthropic-ai/sdk';
 
-client = anthropic.Anthropic()
+const client = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
-SYSTEM_PROMPT = """
-You are ScamVault's threat intelligence triage engine for the Ubuntu Bridge
-Initiative. Your job is to analyse submitted scam content and return a
-structured JSON object. You must be accurate, consistent, and privacy-safe.
-
-PRIVACY RULE (non-negotiable):
-Before any analysis, identify and strip all information that could identify
-the victim (the person who submitted this report). This includes:
-- Their name, email address, phone number
-- Their IP address or device identifiers
-- Any reply-to or from fields that belong to the RECIPIENT
-- Personal account numbers or reference numbers unique to the victim
-
-You are keeping attacker/scammer information (their domains, their phone
-numbers, their sending addresses) — that is threat intelligence.
-
-OUTPUT FORMAT:
-Return ONLY valid JSON. No preamble, no explanation, no markdown.
-
-{
-  "type": "<phishing_email|smishing|vishing|investment_fraud|romance_scam|
-            business_email_compromise|tech_support|crypto_fraud|other>",
-  "severity": <integer 1-5>,
-  "severity_reason": "<one sentence explaining severity score>",
-  "confidence": <float 0.0-1.0>,
-  "summary": "<2-3 sentence plain-English summary for a non-technical reader>",
-  "ai_tags": ["<tag1>", "<tag2>"],
-  "indicators": [
-    { "type": "<domain|ip_address|email_address|phone_number|url|sender_name|file_hash>",
-      "value": "<the actual value>" }
-  ],
-  "is_novel": <true|false>,
-  "novel_reason": "<if is_novel=true, explain what makes this appear new>",
-  "pii_stripped": <true|false>,
-  "pii_found": ["<list of PII types found and removed>"]
+export interface TriageResult {
+  type:
+    | 'phishing_email'
+    | 'smishing'
+    | 'vishing'
+    | 'investment_fraud'
+    | 'romance_scam'
+    | 'business_email_compromise'
+    | 'tech_support'
+    | 'crypto_fraud'
+    | 'other';
+  severity: number;
+  severity_reason: string;
+  confidence: number;
+  summary: string;
+  ai_tags: string[];
+  indicators: Array<{ type: string; value: string }>;
+  is_novel: boolean;
+  novel_reason: string;
+  pii_stripped: boolean;
+  pii_found: string[];
 }
 
-SEVERITY SCALE:
-1 = Low (generic mass spam, no convincing elements)
-2 = Mild (some personalisation, limited financial risk)
-3 = Moderate (convincing, targets credentials or small amounts)
-4 = High (highly convincing, targets significant financial amounts or sensitive credentials)
-5 = Critical (novel campaign, zero-day lure, targets critical infrastructure)
+const FALLBACK_RESULT = Object.freeze({
+  type: 'other',
+  severity: 1,
+  severity_reason: '',
+  confidence: 0,
+  summary: '',
+  ai_tags: [],
+  indicators: [],
+  is_novel: false,
+  novel_reason: '',
+  pii_stripped: false,
+  pii_found: [],
+  triage_failed: true,
+} as TriageResult);
 
-TAG VOCABULARY:
-urgent_action | impersonation | brand_spoofing | gov_impersonation |
-bank_impersonation | credential_harvest | financial_fraud | data_exfiltration |
-lookalike_domain | social_engineering | mobile_money | crypto | gift_cards |
-wire_transfer | invoice_fraud | fake_delivery | lottery | job_scam |
-sextortion | malware_link | qr_code | ai_generated_text
+export async function triageSubmission(
+  rawContent: string,
+): Promise<TriageResult> {
+  try {
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      system: TRIAGE_SYSTEM_PROMPT,
+      messages: [
+        {
+          role: 'user',
+          content: `Analyse this submission:\n\n${rawContent}`,
+        },
+      ],
+    });
 
-NOVELTY GUIDANCE:
-Mark is_novel=true if the content shows a lure or pretext not commonly seen,
-a new technical mechanism, or a new target demographic for a known scam type.
-Most submissions will be known variants — mark false by default.
-"""
+    const rawJson =
+      response.content[0].type === 'text' ? response.content[0].text : '';
+    const result = JSON.parse(rawJson) as TriageResult;
 
-def triage_submission(raw_content: str) -> dict:
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=1024,
-        system=SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": f"Analyse this submission:
+    // Enforce required fields with safe defaults
+    result.is_novel = result.is_novel ?? false;
+    result.novel_reason = result.novel_reason ?? '';
+    result.pii_stripped = result.pii_stripped ?? false;
+    result.pii_found = result.pii_found ?? [];
+    result.confidence =
+      Math.round(Math.max(0, Math.min(1, result.confidence ?? 0.5)) * 1000) /
+      1000;
+    result.severity = Math.max(1, Math.min(5, result.severity ?? 1));
 
-{raw_content}"
-            }
-        ]
-    )
+    return result;
+  } catch (error) {
+    console.error('Triage failed:', error);
+    return { ...FALLBACK_RESULT };
+  }
+}
 
-    raw_json = response.content[0].text.strip()
-    result = json.loads(raw_json)
-
-    # Enforce required fields with safe defaults
-    result.setdefault("is_novel", False)
-    result.setdefault("novel_reason", "")
-    result.setdefault("pii_stripped", False)
-    result.setdefault("pii_found", [])
-    result["confidence"] = round(float(result.get("confidence", 0.5)), 3)
-    result["severity"] = max(1, min(5, int(result.get("severity", 1))))
-
-    return result
-
-
-def calculate_points(triage: dict, is_duplicate: bool) -> tuple[int, str]:
-    base = 10
-    bonus = 0
-    reasons = []
-
-    if triage.get("severity", 1) >= 4:
-        bonus += 10
-        reasons.append("high severity")
-
-    if triage.get("is_novel"):
-        bonus += 25
-        reasons.append("novel campaign")
-
-    if is_duplicate:
-        base = 5
-        reasons.append("duplicate — confirms campaign volume")
-
-    total = base + bonus
-    reason = f"base submission ({base}pt)"
-    if reasons:
-        reason += " + " + ", ".join(reasons) + f" ({bonus}pt bonus)"
-
-    return total, reason
+export async function hashContent(content: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(content.trim().toLowerCase());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 ```
 
 ---
@@ -170,54 +145,75 @@ def calculate_points(triage: dict, is_duplicate: bool) -> tuple[int, str]:
 
 Before inserting a new report, hash the core content:
 
-```python
-import hashlib
+```typescript
+import { hashContent } from '@/lib/ai/triage';
 
-def content_hash(raw_content: str) -> str:
-    normalised = raw_content.strip().lower()
-    return hashlib.sha256(normalised.encode()).hexdigest()
+const contentHash = await hashContent(coreContent);
+const existingReport = await db
+  .from('reports')
+  .select('id, campaign_id')
+  .eq('content_hash', contentHash)
+  .single();
 ```
 
 Query `reports` for a matching `content_hash`. If found:
 
 - Link submission to the existing `campaign_id`
-- Set `is_duplicate = True` in `calculate_points()`
+- Set `isDuplicate = true` in `calculatePoints()`
 - Still insert a `submissions` row and award reduced points (5pts)
 - Increment `campaigns.report_count`
 
+**Important Note on Dedup Hash:** The hash is computed from `coreContent` only — the free-text context note is **excluded**. This means two users submitting the same scam with different notes (context) still trigger dedup correctly, because the hash focuses on the core scam content.
+
 ---
 
-## Error Handling
+## Triage Quality Notes
+
+### hashContent Implementation
+
+Uses Web Crypto API (not Node crypto) for Workers runtime compatibility:
+
+```typescript
+export async function hashContent(content: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(content.trim().toLowerCase());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+```
+
+Normalisation step (`.trim().toLowerCase()`) ensures same content always hashes the same way regardless of whitespace or case.
+
+### Error Handling
 
 The triage pipeline should never block a submission from being stored. If the Claude API call fails or returns unparseable JSON:
 
-```python
-try:
-    triage_result = triage_submission(raw_content)
-except Exception as e:
-    # Fall back to pending status, manual moderation
-    triage_result = {
-        "type": "other",
-        "severity": 1,
-        "confidence": 0.0,
-        "summary": "",
-        "ai_tags": [],
-        "indicators": [],
-        "is_novel": False,
-        "pii_stripped": False,
-        "pii_found": []
-    }
-    # Log error for review
-    log_triage_failure(report_id, str(e))
+```typescript
+try {
+  triage_result = await triageSubmission(rawContent);
+} catch (error) {
+  console.error('Triage failed:', error);
+  // Fall back to pending status, manual moderation
+  triage_result = { ...FALLBACK_RESULT };
+  // Set flag for manual review
+  triage_failed = true;
+}
 ```
 
-Failed triage submissions are stored with `status = 'under_review'` for manual moderation.
+Failed triage submissions are stored with `triage_failed = true` and `status = 'under_review'` for manual moderation. The report is still recorded and the user still receives points.
+
+---
+
+### Markdown fence stripping
+
+Claude sometimes wraps JSON output in markdown fences despite prompt instructions. The parser strips ` ```json ` and ` ``` ` fences before JSON.parse() as a defensive measure.
 
 ---
 
 ## Cost Estimate
 
-At approximately 500 tokens per submission (input + output), using claude-sonnet:
+At approximately 500 tokens per submission (input + output), using claude-sonnet-4-6:
 
 - 1,000 submissions/month ≈ negligible cost
 - 100,000 submissions/month ≈ manageable at scale
