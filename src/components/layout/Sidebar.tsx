@@ -2,11 +2,11 @@
 
 /**
  * Sidebar is a server component that receives all necessary data as props from its parent page. This allows it to render the leaderboard and shield score without any client-side fetching, ensuring fast load times and a seamless user experience.
- * 
+ *
  * The leaderboard section displays the top contributors with their rank, avatar, name, badge, country, and points. The avatar colors are generated deterministically based on the username to maintain consistency across renders without needing additional data.
- * 
+ *
  * The shield score card is a client component nested within the sidebar. It receives the current user's profile as a prop and handles the display of their points and badge, as well as the progress towards the next tier. This separation allows for dynamic updates to the shield score without affecting the static leaderboard content.
- * 
+ *
  * The researcher access section provides information and a call-to-action for users interested in accessing the API, encouraging engagement from the security research community.
  */
 
@@ -16,10 +16,7 @@ import { BADGE_META, getInitials } from '@/lib/utils';
 import ShieldScoreCard from '@/components/layout/ShieldScoreCard';
 import type { Tables } from '@/types/database';
 
-type LeaderboardUser = Pick<
-  Tables<'users'>,
-  'id' | 'username' | 'display_name' | 'points' | 'badge' | 'country_code'
->;
+type LeaderboardUser = Tables<'leaderboard_users'>;
 
 type CurrentUser = Pick<
   Tables<'users'>,
@@ -97,8 +94,9 @@ export default function Sidebar({
           <div>
             {topUsers.map((user, i) => {
               const rank = i + 1;
-              const av = avatarStyle(user.username);
-              const badge = BADGE_META[user.badge] ?? BADGE_META.watcher;
+              const av = avatarStyle(user.username ?? '');
+              const badge =
+                BADGE_META[user.badge ?? 'watcher'] ?? BADGE_META.watcher;
 
               return (
                 <div
@@ -123,7 +121,10 @@ export default function Sidebar({
                     className='w-7.5 h-7.5 rounded-full flex items-center justify-center text-caption font-medium shrink-0'
                     style={{ background: av.bg, color: av.fg }}
                   >
-                    {getInitials(user.display_name ?? null, user.username)}
+                    {getInitials(
+                      user.display_name ?? null,
+                      user.username ?? '',
+                    )}
                   </div>
 
                   {/* Name + sub */}
@@ -139,7 +140,7 @@ export default function Sidebar({
 
                   {/* Points */}
                   <span className='text-body-xs font-medium text-brand shrink-0'>
-                    {user.points.toLocaleString()}
+                    {(user.points ?? 0).toLocaleString()}
                   </span>
                 </div>
               );

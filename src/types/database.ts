@@ -50,6 +50,13 @@ export type Database = {
             foreignKeyName: "api_keys_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "leaderboard_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -150,6 +157,13 @@ export type Database = {
             foreignKeyName: "points_ledger_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "leaderboard_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "points_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -243,7 +257,21 @@ export type Database = {
             foreignKeyName: "reports_moderated_by_fkey"
             columns: ["moderated_by"]
             isOneToOne: false
+            referencedRelation: "leaderboard_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_moderated_by_fkey"
+            columns: ["moderated_by"]
+            isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_users"
             referencedColumns: ["id"]
           },
           {
@@ -300,7 +328,21 @@ export type Database = {
             foreignKeyName: "researcher_applications_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
+            referencedRelation: "leaderboard_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "researcher_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "researcher_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_users"
             referencedColumns: ["id"]
           },
           {
@@ -343,6 +385,13 @@ export type Database = {
             columns: ["report_id"]
             isOneToOne: false
             referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_users"
             referencedColumns: ["id"]
           },
           {
@@ -430,6 +479,13 @@ export type Database = {
             foreignKeyName: "votes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "leaderboard_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -437,7 +493,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      leaderboard_users: {
+        Row: {
+          badge: string | null
+          country_code: string | null
+          display_name: string | null
+          id: string | null
+          points: number | null
+          username: string | null
+        }
+        Insert: {
+          badge?: string | null
+          country_code?: string | null
+          display_name?: string | null
+          id?: string | null
+          points?: number | null
+          username?: string | null
+        }
+        Update: {
+          badge?: string | null
+          country_code?: string | null
+          display_name?: string | null
+          id?: string | null
+          points?: number | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       approve_researcher_application: {
