@@ -92,10 +92,18 @@ export default async function HomePage() {
             Seen a scam? Report it. Protect someone.
           </h1>
 
-          <p className='text-body-lg font-medium text-fg-muted max-w-[90%] md:max-w-180 mx-auto mb-5'>
+          <p className='text-body-lg font-medium text-fg-muted max-w-[90%] md:max-w-180 mx-auto mb-3'>
             Upload phishing emails, fake texts, and fraud attempts. Earn points,
             climb the leaderboard, and help security researchers understand
             what&apos;s happening right now.
+          </p>
+
+          <p className='text-body font-bold text-fg mb-1'>
+            Report scams. Earn points. Top contributors get rewarded.
+          </p>
+          <p className='text-body-sm text-fg-muted max-w-[90%] md:max-w-180 mx-auto mb-5'>
+            Stay active, climb the leaderboard, and be first in line when we launch
+            contributor rewards.
           </p>
 
           <a
