@@ -54,7 +54,9 @@ export default async function ResearchersApplyPage() {
           className='bg-canvas border border-stroke-faint rounded-lg p-4'
         >
           <p className='text-body-sm font-medium text-fg mb-1'>{label}</p>
-          <p className='text-body-xs font-medium text-fg-muted leading-relaxed'>{desc}</p>
+          <p className='text-body-xs font-medium text-fg-muted leading-relaxed'>
+            {desc}
+          </p>
         </div>
       ))}
     </div>
@@ -82,6 +84,8 @@ export default async function ResearchersApplyPage() {
             </div>
           </Container>
         </main>
+
+        <Footer />
       </div>
     );
   }

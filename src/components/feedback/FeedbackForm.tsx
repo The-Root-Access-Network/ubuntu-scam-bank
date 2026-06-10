@@ -128,6 +128,7 @@ export default function FeedbackForm() {
             value={form.name}
             onChange={(e) => update('name', e.target.value)}
             required
+            minLength={2}
             maxLength={100}
             placeholder='Your name'
             className='w-full border border-stroke rounded-md px-3 py-2 text-body-xs bg-canvas text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none transition-colors duration-150'

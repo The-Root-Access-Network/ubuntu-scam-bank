@@ -629,3 +629,24 @@ GET /rest/v1/users?select=\*
 Modified as a side effect of running `supabase gen types` — not a meaningful change, included in commit for cleanliness.
 
 **Closes:** [Issue #9](https://github.com/The-Root-Access-Network/ubuntu-scam-bank/issues/9)
+
+## 2026-06-10 (continued)
+
+### Feedback form, contact page, and site-wide footer — feature/feedback-form
+
+- Created `feedback` table in Supabase with RLS enabled and no anon/authenticated policies — all writes go through the admin client (service role). Added check constraint on `role` column to stay in sync with Zod enum in the API route. Index on `created_at desc` for dashboard queries.
+
+- `POST /api/feedback` — Zod validation, admin client insert, optional Resend notification gated on `RESEND_API_KEY`. If key is absent, insert still completes and no error surfaces to the user. Resend `from` domain will need updating to verified subdomain once `scambank.ubuntubridgeinitiatives.org` (or equivalent) is confirmed. Recipient address to update from placeholder to `therootaccessnetwork@africybercore.com` before Resend goes live.
+
+- Footer replaced the thin strip with a four-column layout: brand + mission line, Platform links, Researchers links, Organisation links (including external links to UBI and TRAN sites). Bottom bar has copyright and tagline. Footer applied to all public pages in a separate commit.
+
+- Nav "For researchers" link updated from `#researchers` anchor to `/researchers/apply`. No auth-conditional logic needed — the apply page already handles unauthenticated visitors gracefully.
+
+- Tested locally: form submits, success state renders, row written to Supabase correctly. Resend skipped silently as expected (no API key set). Email delivery will be verified once domain is verified and key is added to Cloudflare runtime secrets.
+
+### Hero copy update and post-merge fixes — chore/hero-copy
+
+- Added bold incentive copy to homepage hero between the h1 and the existing description paragraph: "Report scams. Earn points. Top contributors get rewarded." with a non-binding follow-up line about contributor rewards coming soon. Copy intentionally avoids hard promises on timeline or reward type.
+- Added `minLength={2}` to Full name input in FeedbackForm for client-side parity with the Zod schema minimum.
+- Added Footer to the unauthenticated render path of `/researchers/apply` — was missing from that branch.
+- Simplified organisation field validation in `/api/feedback route` — replaced `.optional().or(z.literal(''))` with `.optional().transform()` pattern. Cleaner handling of empty string from HTML form inputs. The || null conversion at the insert site is unaffected.

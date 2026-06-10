@@ -44,9 +44,8 @@ const FeedbackSchema = z.object({
   organisation: z
     .string()
     .max(200)
-    .transform((s) => s.trim())
     .optional()
-    .or(z.literal('')),
+    .transform((s) => s?.trim() || undefined),
   message: z
     .string()
     .min(10, 'Message must be at least 10 characters')
@@ -148,7 +147,10 @@ export async function POST(request: NextRequest) {
       });
     } catch (emailErr) {
       // Non-fatal — log for ops visibility, do not surface to user
-      console.error('[feedback] Resend notification failed (non-fatal):', emailErr);
+      console.error(
+        '[feedback] Resend notification failed (non-fatal):',
+        emailErr,
+      );
     }
   }
 
