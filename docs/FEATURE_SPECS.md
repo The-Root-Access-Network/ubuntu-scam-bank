@@ -263,7 +263,6 @@ Badge updates automatically via Postgres trigger on `users.points`.
 
 **What's placeholder/incomplete:**
 
-- view_count increment removed from report detail page (needs proper server action implementation)
 - Rate limiting defined but not enforced
 - Streak bonuses (constants defined, no code paths)
 - VOTE_CONFIRM points (constant defined, no code path)

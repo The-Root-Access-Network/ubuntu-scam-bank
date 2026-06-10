@@ -44,3 +44,6 @@ next-env.d.ts
 .open-next
 .wrangler/
 src/lib/countries-data.json
+
+# project context
+ubuntu-scam-bank_project-context.md
