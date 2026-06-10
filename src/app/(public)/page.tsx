@@ -3,6 +3,7 @@
 import { IconUpload } from '@tabler/icons-react';
 import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
+import Footer from '@/components/layout/Footer';
 import SubmissionForm from '@/components/forms/SubmissionForm';
 import FeedSection from '@/components/feed/FeedSection';
 import Sidebar from '@/components/layout/Sidebar';
@@ -151,6 +152,8 @@ export default async function HomePage() {
           </div>
         </Container>
       </main>
+
+      <Footer />
     </div>
   );
 }
