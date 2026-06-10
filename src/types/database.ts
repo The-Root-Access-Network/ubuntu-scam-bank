@@ -92,6 +92,36 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          organisation: string | null
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          organisation?: string | null
+          role: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          organisation?: string | null
+          role?: string
+        }
+        Relationships: []
+      }
       indicators: {
         Row: {
           extracted_at: string

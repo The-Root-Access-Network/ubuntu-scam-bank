@@ -13,6 +13,7 @@
 import Link from 'next/link';
 import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
+import Footer from '@/components/layout/Footer';
 import { createClient } from '@/lib/supabase/server';
 import { BADGE_META, getInitials } from '@/lib/utils';
 import type { Metadata } from 'next';
@@ -263,6 +264,8 @@ export default async function LeaderboardPage({
           </p>
         </Container>
       </main>
+
+      <Footer />
     </div>
   );
 }

@@ -23,6 +23,7 @@ import {
 } from '@tabler/icons-react';
 import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
+import Footer from '@/components/layout/Footer';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { TYPE_META, SEVERITY_LABELS, relativeTime } from '@/lib/utils';
 import VoteButtons from '@/components/reports/VoteButtons';
@@ -281,6 +282,8 @@ export default async function ReportPage({
           </div>
         </Container>
       </main>
+
+      <Footer />
     </div>
   );
 }

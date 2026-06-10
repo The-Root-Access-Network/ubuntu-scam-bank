@@ -2,6 +2,7 @@
 
 import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
+import Footer from '@/components/layout/Footer';
 import ApplicationForm from '@/components/researchers/ApplicationForm';
 import { createClient } from '@/lib/supabase/server';
 import type { Metadata } from 'next';
@@ -140,6 +141,8 @@ export default async function ResearchersApplyPage() {
           )}
         </Container>
       </main>
+
+      <Footer />
     </div>
   );
 }
