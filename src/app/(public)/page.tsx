@@ -30,7 +30,9 @@ async function getPageData() {
       .from('reports')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'published'),
-    supabase.from('users').select('*', { count: 'exact', head: true }),
+    supabase
+      .from('leaderboard_users')
+      .select('*', { count: 'exact', head: true }),
     supabase
       .from('reports')
       .select('country_code')
@@ -45,7 +47,7 @@ async function getPageData() {
       .order('submitted_at', { ascending: false })
       .limit(20),
     supabase
-      .from('users')
+      .from('leaderboard_users')
       .select('id, username, display_name, points, badge, country_code')
       .order('points', { ascending: false })
       .limit(5),
