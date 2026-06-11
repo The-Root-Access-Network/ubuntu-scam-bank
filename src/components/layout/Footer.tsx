@@ -28,7 +28,7 @@ const FOOTER_LINKS: FooterSection[] = [
     heading: 'Researchers',
     links: [
       { label: 'Apply for API access', href: '/researchers/apply' },
-      { label: 'API reference', href: '/researchers/apply#api' },
+      // { label: 'API reference', href: '/researchers/apply#api' },
     ],
   },
   {
