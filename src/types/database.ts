@@ -556,17 +556,29 @@ export type Database = {
         Args: { p_application_id: string }
         Returns: string
       }
-      get_monthly_leaderboard: {
-        Args: never
-        Returns: {
-          badge: string
-          country_code: string
-          display_name: string
-          id: string
-          monthly_points: number
-          username: string
-        }[]
-      }
+      get_monthly_leaderboard:
+        | {
+            Args: never
+            Returns: {
+              badge: string
+              country_code: string
+              display_name: string
+              id: string
+              monthly_points: number
+              username: string
+            }[]
+          }
+        | {
+            Args: { target_month?: string }
+            Returns: {
+              badge: string
+              country_code: string
+              display_name: string
+              id: string
+              monthly_points: number
+              username: string
+            }[]
+          }
       reject_researcher_application: {
         Args: { p_application_id: string }
         Returns: undefined

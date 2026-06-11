@@ -650,3 +650,27 @@ Modified as a side effect of running `supabase gen types` — not a meaningful c
 - Added `minLength={2}` to Full name input in FeedbackForm for client-side parity with the Zod schema minimum.
 - Added Footer to the unauthenticated render path of `/researchers/apply` — was missing from that branch.
 - Simplified organisation field validation in `/api/feedback route` — replaced `.optional().or(z.literal(''))` with `.optional().transform()` pattern. Cleaner handling of empty string from HTML form inputs. The || null conversion at the insert site is unaffected.
+
+---
+
+## 2026-06-11
+
+### Dynamic sidebar tabs and leaderboard filters — feature/sidebar-leaderboard-dynamic
+
+- Modified `get_monthly_leaderboard()` Postgres function to accept an optional `target_month date` parameter (defaults to current month). Body uses `target_month::timestamptz` — safe since Supabase runs UTC. RPC call site now passes `{ target_month: '${month}-01' }`. Regenerated types — function shows two overload signatures (Args: never and Args: { target_month?: string }) which is expected behaviour from the type generator for overloaded functions.
+
+- Sidebar country tabs are now dynamic. `getPageData()` in `page.tsx` fetches all `country_code` + `points` rows from `leaderboard_users` and aggregates in JS (PostgREST doesn't support GROUP BY). Top 2 countries by aggregate points are passed as `topCountries: string[]` to Sidebar. If fewer than 2 countries have data, fewer tabs render — no defensive code needed, `slice(0, 2)` handles it.
+
+- `export const revalidate = 300` added to `page.tsx` — full page cached for 5 minutes at the edge. This affects the feed (latest 20 reports) as well as the sidebar tabs. Acceptable at current scale — flag for review if real-time feed freshness becomes a priority.
+
+- `COUNTRY_TABS` constant removed from leaderboard page entirely. Country validation simplified: any 2-char tab value that isn't 'global' or 'monthly' is treated as a country code. Invalid codes return zero rows and render the empty state — no list validation needed.
+
+- `CountrySelect` client component — full-world dropdown from `countries-data.json`, routes to `/leaderboard?tab={code}` on change. "All countries" option routes to `/leaderboard` (global).
+
+- `MonthSelect` client component — generates options from launch month (`2026-05`) through current month, descending (most recent first). Uses UTC throughout to avoid timezone edge cases at month boundaries. Only rendered by the server when `tab === 'monthly'` — no client-side show/hide needed. Routes to `/leaderboard?tab=monthly&month={YYYY-MM}`.
+
+- URL shape for monthly history: `/leaderboard?tab=monthly&month=2026-05`. Shareable and readable. Footer summary now shows the full month name (e.g. "May 2026") derived from `selectedMonth` via `toLocaleDateString`.
+
+- Confirm `countries-data.json` import path in `CountrySelect.tsx` is correct before deploy — DEV_NOTES recorded it as `public/` originally but import uses `@/lib/`. Verify file location matches.
+
+- Checked, it is correct `src/lib/countries-data.json`.
