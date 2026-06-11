@@ -1,5 +1,22 @@
 // src/app/(public)/page.tsx
 
+/**
+ * HomePage is a server component that fetches all necessary data in parallel before rendering. This includes the latest reports for the feed, leaderboard users for the sidebar, and the current user's profile for the shield score.
+ *
+ * By fetching all data server-side and passing it as props to child components, we ensure a fast initial load without any client-side fetching or waterfalls.
+ *
+ * The page is structured with a hero section at the top, followed by a two-column layout where the left side contains the submission form and feed, and the right sidebar displays the leaderboard and shield score.
+ *
+ * The sidebar also includes dynamic country tabs based on the top countries from the leaderboard data.
+ *
+ * The page revalidates every 5 minutes at the edge to keep content reasonably fresh without overwhelming the server with requests.
+ *
+ * This affects the full page including the feed (latest 20 reports) and the sidebar country tabs.
+ * At current scale this is acceptable — flag for review if real-time feed freshness becomes a priority post-launch.
+ */
+
+export const revalidate = 300;
+
 import { IconUpload } from '@tabler/icons-react';
 import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
@@ -26,6 +43,7 @@ async function getPageData() {
     feedResult,
     leaderboardResult,
     profileResult,
+    countryPointsResult,
   ] = await Promise.all([
     supabase
       .from('reports')
@@ -60,7 +78,28 @@ async function getPageData() {
           .eq('id', user.id)
           .single()
       : Promise.resolve({ data: null }),
+    // Top countries by aggregate points for dynamic sidebar tabs.
+    // Fetches all rows with a country code from the safe view — aggregation
+    // done in JS since PostgREST doesn't support GROUP BY directly.
+    supabase
+      .from('leaderboard_users')
+      .select('country_code, points')
+      .not('country_code', 'is', null),
   ]);
+
+  // Aggregate points per country and derive top 2 by total.
+  const countryTotals = (countryPointsResult.data ?? []).reduce<
+    Record<string, number>
+  >((acc, row) => {
+    const code = row.country_code!;
+    acc[code] = (acc[code] ?? 0) + (row.points ?? 0);
+    return acc;
+  }, {});
+
+  const topCountries = Object.entries(countryTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([code]) => code);
 
   const uniqueCountries = new Set(
     countryResult.data?.map((r) => r.country_code) ?? [],
@@ -75,11 +114,13 @@ async function getPageData() {
     feedReports: feedResult.data ?? [],
     topUsers: leaderboardResult.data ?? [],
     currentUser: profileResult.data ?? null,
+    topCountries,
   };
 }
 
 export default async function HomePage() {
-  const { stats, feedReports, topUsers, currentUser } = await getPageData();
+  const { stats, feedReports, topUsers, currentUser, topCountries } =
+    await getPageData();
 
   return (
     <div className='min-h-dvh bg-canvas-subtle'>
@@ -92,18 +133,18 @@ export default async function HomePage() {
             Seen a scam? Report it. Protect someone.
           </h1>
 
-          <p className='text-body-lg font-medium text-fg-muted max-w-[90%] md:max-w-180 mx-auto mb-3'>
+          <p className='text-body-sm font-bold text-fg mb-1'>
+            Report scams. Earn points. Top contributors get rewarded.
+          </p>
+          <p className='text-body-xs text-fg-muted max-w-[90%] md:max-w-180 mx-auto mb-1'>
+            Stay active, climb the leaderboard, and be first in line when we
+            launch contributor rewards.
+          </p>
+
+          <p className='text-body-lg font-medium text-fg-muted max-w-[90%] md:max-w-180 mx-auto mb-5'>
             Upload phishing emails, fake texts, and fraud attempts. Earn points,
             climb the leaderboard, and help security researchers understand
             what&apos;s happening right now.
-          </p>
-
-          <p className='text-body font-bold text-fg mb-1'>
-            Report scams. Earn points. Top contributors get rewarded.
-          </p>
-          <p className='text-body-sm text-fg-muted max-w-[90%] md:max-w-180 mx-auto mb-5'>
-            Stay active, climb the leaderboard, and be first in line when we launch
-            contributor rewards.
           </p>
 
           <a
@@ -142,8 +183,7 @@ export default async function HomePage() {
         <Container className='py-4'>
           {/*
            * Two-column grid — left column grows, right sidebar is fixed 260px.
-           * On mobile/tablet the sidebar is hidden — leaderboard and researcher
-           * access cards will get dedicated pages in Phase 2.
+           * On mobile/tablet the sidebar is hidden.
            */}
           <div className='grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-3.5'>
             {/* Left column */}
@@ -154,8 +194,11 @@ export default async function HomePage() {
 
             {/* Right sidebar — desktop only */}
             <aside className='hidden lg:flex flex-col gap-3.5'>
-              <Sidebar topUsers={topUsers} currentUser={currentUser} />
-              {/* Leaderboard, ShieldScore and Researcher access card */}
+              <Sidebar
+                topUsers={topUsers}
+                currentUser={currentUser}
+                topCountries={topCountries}
+              />
             </aside>
           </div>
         </Container>

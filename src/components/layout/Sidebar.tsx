@@ -8,6 +8,10 @@
  * The shield score card is a client component nested within the sidebar. It receives the current user's profile as a prop and handles the display of their points and badge, as well as the progress towards the next tier. This separation allows for dynamic updates to the shield score without affecting the static leaderboard content.
  *
  * The researcher access section provides information and a call-to-action for users interested in accessing the API, encouraging engagement from the security research community.
+ *
+ * topCountries is derived server-side in page.tsx from leaderboard_users aggregate points.
+ * The Global tab is always first; topCountries (0–2 items) follow as active links to
+ * /leaderboard?tab={code}. All tabs are real Links — no disabled states.
  */
 
 import Link from 'next/link';
@@ -38,10 +42,6 @@ function avatarStyle(username: string) {
   return AVATAR_PALETTE[username.charCodeAt(0) % AVATAR_PALETTE.length];
 }
 
-// function initials(username: string) {
-//   return username.slice(0, 2).toUpperCase();
-// }
-
 // Rank number colours matching the mockup
 const RANK_COLOR: Record<number, string> = {
   1: '#BA7517', // gold
@@ -52,10 +52,22 @@ const RANK_COLOR: Record<number, string> = {
 export default function Sidebar({
   topUsers,
   currentUser,
+  topCountries,
 }: {
   topUsers: LeaderboardUser[];
   currentUser: CurrentUser;
+  topCountries: string[];
 }) {
+  // Build tab list: Global always first, then top countries (0–2 items).
+  // All tabs link to the leaderboard page — no disabled states.
+  const tabs = [
+    { label: 'Global', href: '/leaderboard' },
+    ...topCountries.map((code) => ({
+      label: code,
+      href: `/leaderboard?tab=${code}`,
+    })),
+  ];
+
   return (
     <>
       {/* ── Leaderboard ──────────────────────────────────────────────── */}
@@ -68,20 +80,16 @@ export default function Sidebar({
           </p>
         </div>
 
-        {/* Tab strip — UK/NG filtering is Phase 2; Global is active for MVP */}
+        {/* Tab strip — dynamic: Global + top countries by aggregate points */}
         <div className='flex gap-1 mb-3'>
-          {['Global', 'UK', 'NG'].map((tab) => (
-            <span
-              key={tab}
-              className={[
-                'text-body-xs px-3 py-1 rounded-md border',
-                tab === 'Global'
-                  ? 'bg-canvas-subtle border-stroke text-fg'
-                  : 'border-transparent text-fg-muted cursor-not-allowed opacity-60',
-              ].join(' ')}
+          {tabs.map(({ label, href }) => (
+            <Link
+              key={label}
+              href={href}
+              className='text-body-xs px-3 py-1 rounded-md border border-transparent text-fg-muted hover:border-stroke hover:bg-canvas-subtle hover:text-fg transition-colors duration-150'
             >
-              {tab}
-            </span>
+              {label}
+            </Link>
           ))}
         </div>
 
@@ -148,7 +156,6 @@ export default function Sidebar({
           </div>
         )}
 
-        {/* Now a Link, not a button */}
         <Link
           href='/leaderboard'
           className='block w-full mt-3 text-body-xs font-medium px-3.5 py-1.5 border border-stroke rounded-md text-center text-fg hover:bg-canvas-subtle transition-colors duration-150 cursor-pointer'
@@ -179,7 +186,7 @@ export default function Sidebar({
           GET /api/v1/reports?type=phishing&amp;country=NG&amp;limit=50
         </div>
         <Link
-          href='researchers/apply'
+          href='/researchers/apply'
           className='w-full block text-body-xs font-medium px-3.5 py-1.5 border border-stroke rounded-md text-center text-fg hover:bg-canvas-subtle transition-colors duration-150'
         >
           Request API key ↗
