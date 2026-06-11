@@ -15,7 +15,7 @@
  * At current scale this is acceptable — flag for review if real-time feed freshness becomes a priority post-launch.
  */
 
-export const revalidate = 300;
+export const revalidate = 60;
 
 import { IconUpload } from '@tabler/icons-react';
 import Nav from '@/components/layout/Nav';

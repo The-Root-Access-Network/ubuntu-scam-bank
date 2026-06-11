@@ -674,3 +674,18 @@ Modified as a side effect of running `supabase gen types` — not a meaningful c
 - Confirm `countries-data.json` import path in `CountrySelect.tsx` is correct before deploy — DEV_NOTES recorded it as `public/` originally but import uses `@/lib/`. Verify file location matches.
 
 - Checked, it is correct `src/lib/countries-data.json`.
+
+### Researcher API detail endpoint and codebase cleanup — feature/researcher-api-report-detail
+
+- Extracted `validateApiKey` from `/api/v1/reports/route.ts` into `src/lib/api/validateApiKey.ts`. Exported `ApiKeyValidation` type. Shared across all v1 route handlers — no logic changes, pure refactor.
+Note: function makes two sequential DB calls per request (lookup + last_used_at update). When Phase 4 rate limiting is implemented, consider folding into a single operation.
+
+- Added `GET /api/v1/reports/:id` at `src/app/api/v1/reports/[id]/route.ts`. Same auth pattern as the list endpoint. UUID validated via regex before DB call — returns 400 for malformed IDs rather than letting Postgres reject with a 500. Uses `maybeSingle()` — returns 404 cleanly when report not found or not published. Excludes `raw_content` (residual PII risk) and `submitted_by` (internal user ID). Returns full indicators in response body.
+
+- Deleted `src/app/api/triage/route.ts` and `src/app/api/reports/route.ts` — both were stubs with no logic, serving "coming soon" responses on public paths. Removed to avoid information leakage and future confusion.
+
+- Removed API reference link from footer Researchers section — was a placeholder pointing to `/researchers/apply#api` which doesn't exist. Link will be restored when an actual API docs page is built in Phase 4.
+
+- `src/components/ui/` left in place — conventional location for shared UI primitives. Empty for now; `.gitkeep` added.
+
+- Tested locally: list endpoint still works after validateApiKey extraction. Detail endpoint returns correct shape with full indicators. UUID validation returns 400 for malformed IDs. 404 for unpublished or nonexistent reports.

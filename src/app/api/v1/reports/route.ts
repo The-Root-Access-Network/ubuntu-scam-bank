@@ -1,73 +1,8 @@
 // src/app/api/v1/reports/route.ts
 
 import { NextRequest } from 'next/server';
-import md5 from 'blueimp-md5';
 import { createAdminClient } from '@/lib/supabase/server';
-
-// ── API key validation ────────────────────────────────────────────────────────
-
-async function validateApiKey(authHeader: string | null) {
-  if (!authHeader?.startsWith('Bearer ')) {
-    return {
-      valid: false as const,
-      rateLimit: 0,
-      error:
-        'Missing or invalid Authorization header. Expected: Authorization: Bearer <key>',
-    };
-  }
-
-  const rawKey = authHeader.slice(7).trim();
-  if (!rawKey)
-    return { valid: false as const, rateLimit: 0, error: 'API key is empty.' };
-
-  // Hash the provided key for lookup
-  // const encoded = new TextEncoder().encode(rawKey);
-  // const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
-  // const keyHash = Array.from(new Uint8Array(hashBuffer))
-  //   .map((b) => b.toString(16).padStart(2, '0'))
-  //   .join('');
-  const keyHash = md5(rawKey);
-
-  let admin;
-  try {
-    admin = createAdminClient();
-  } catch {
-    return {
-      valid: false as const,
-      rateLimit: 0,
-      error: 'Server configuration error.',
-    };
-  }
-
-  const { data: apiKey } = await admin
-    .from('api_keys')
-    .select('id, rate_limit_rpm, revoked_at')
-    .eq('key_hash', keyHash)
-    .maybeSingle();
-
-  if (!apiKey)
-    return { valid: false as const, rateLimit: 0, error: 'Invalid API key.' };
-  if (apiKey.revoked_at)
-    return {
-      valid: false as const,
-      rateLimit: 0,
-      error: 'This API key has been revoked.',
-    };
-
-  // Update last_used_at — non-blocking, non-fatal, awaited directly.
-  // Supabase query builders return PromiseLike, not Promise, so .catch() isn't
-  // available without wrapping. Awaiting is simpler and safe on Workers.
-  try {
-    await admin
-      .from('api_keys')
-      .update({ last_used_at: new Date().toISOString() })
-      .eq('id', apiKey.id);
-  } catch {
-    // Non-fatal — last_used_at is an audit field only
-  }
-
-  return { valid: true as const, rateLimit: apiKey.rate_limit_rpm };
-}
+import { validateApiKey } from '@/lib/api/validateApiKey';
 
 // ── CORS — this API is called from external tools and scripts ─────────────────
 
