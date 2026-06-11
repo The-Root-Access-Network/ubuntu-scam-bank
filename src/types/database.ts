@@ -50,6 +50,13 @@ export type Database = {
             foreignKeyName: "api_keys_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "leaderboard_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -82,6 +89,36 @@ export type Database = {
           name?: string
           report_count?: number
           type?: string
+        }
+        Relationships: []
+      }
+      feedback: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          organisation: string | null
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          organisation?: string | null
+          role: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          organisation?: string | null
+          role?: string
         }
         Relationships: []
       }
@@ -146,6 +183,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "points_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "points_ledger_user_id_fkey"
             columns: ["user_id"]
@@ -243,7 +287,21 @@ export type Database = {
             foreignKeyName: "reports_moderated_by_fkey"
             columns: ["moderated_by"]
             isOneToOne: false
+            referencedRelation: "leaderboard_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_moderated_by_fkey"
+            columns: ["moderated_by"]
+            isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_users"
             referencedColumns: ["id"]
           },
           {
@@ -300,7 +358,21 @@ export type Database = {
             foreignKeyName: "researcher_applications_reviewed_by_fkey"
             columns: ["reviewed_by"]
             isOneToOne: false
+            referencedRelation: "leaderboard_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "researcher_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "researcher_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_users"
             referencedColumns: ["id"]
           },
           {
@@ -343,6 +415,13 @@ export type Database = {
             columns: ["report_id"]
             isOneToOne: false
             referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_users"
             referencedColumns: ["id"]
           },
           {
@@ -430,6 +509,13 @@ export type Database = {
             foreignKeyName: "votes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "leaderboard_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -437,23 +523,65 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      leaderboard_users: {
+        Row: {
+          badge: string | null
+          country_code: string | null
+          display_name: string | null
+          id: string | null
+          points: number | null
+          username: string | null
+        }
+        Insert: {
+          badge?: string | null
+          country_code?: string | null
+          display_name?: string | null
+          id?: string | null
+          points?: number | null
+          username?: string | null
+        }
+        Update: {
+          badge?: string | null
+          country_code?: string | null
+          display_name?: string | null
+          id?: string | null
+          points?: number | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       approve_researcher_application: {
         Args: { p_application_id: string }
         Returns: string
       }
-      get_monthly_leaderboard: {
-        Args: never
-        Returns: {
-          badge: string
-          country_code: string
-          display_name: string
-          id: string
-          monthly_points: number
-          username: string
-        }[]
+      get_monthly_leaderboard:
+        | {
+            Args: never
+            Returns: {
+              badge: string
+              country_code: string
+              display_name: string
+              id: string
+              monthly_points: number
+              username: string
+            }[]
+          }
+        | {
+            Args: { target_month?: string }
+            Returns: {
+              badge: string
+              country_code: string
+              display_name: string
+              id: string
+              monthly_points: number
+              username: string
+            }[]
+          }
+      reject_researcher_application: {
+        Args: { p_application_id: string }
+        Returns: undefined
       }
     }
     Enums: {

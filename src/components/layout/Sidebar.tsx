@@ -2,12 +2,16 @@
 
 /**
  * Sidebar is a server component that receives all necessary data as props from its parent page. This allows it to render the leaderboard and shield score without any client-side fetching, ensuring fast load times and a seamless user experience.
- * 
+ *
  * The leaderboard section displays the top contributors with their rank, avatar, name, badge, country, and points. The avatar colors are generated deterministically based on the username to maintain consistency across renders without needing additional data.
- * 
+ *
  * The shield score card is a client component nested within the sidebar. It receives the current user's profile as a prop and handles the display of their points and badge, as well as the progress towards the next tier. This separation allows for dynamic updates to the shield score without affecting the static leaderboard content.
- * 
+ *
  * The researcher access section provides information and a call-to-action for users interested in accessing the API, encouraging engagement from the security research community.
+ *
+ * topCountries is derived server-side in page.tsx from leaderboard_users aggregate points.
+ * The Global tab is always first; topCountries (0–2 items) follow as active links to
+ * /leaderboard?tab={code}. All tabs are real Links — no disabled states.
  */
 
 import Link from 'next/link';
@@ -16,10 +20,7 @@ import { BADGE_META, getInitials } from '@/lib/utils';
 import ShieldScoreCard from '@/components/layout/ShieldScoreCard';
 import type { Tables } from '@/types/database';
 
-type LeaderboardUser = Pick<
-  Tables<'users'>,
-  'id' | 'username' | 'display_name' | 'points' | 'badge' | 'country_code'
->;
+type LeaderboardUser = Tables<'leaderboard_users'>;
 
 type CurrentUser = Pick<
   Tables<'users'>,
@@ -41,10 +42,6 @@ function avatarStyle(username: string) {
   return AVATAR_PALETTE[username.charCodeAt(0) % AVATAR_PALETTE.length];
 }
 
-// function initials(username: string) {
-//   return username.slice(0, 2).toUpperCase();
-// }
-
 // Rank number colours matching the mockup
 const RANK_COLOR: Record<number, string> = {
   1: '#BA7517', // gold
@@ -55,10 +52,22 @@ const RANK_COLOR: Record<number, string> = {
 export default function Sidebar({
   topUsers,
   currentUser,
+  topCountries,
 }: {
   topUsers: LeaderboardUser[];
   currentUser: CurrentUser;
+  topCountries: string[];
 }) {
+  // Build tab list: Global always first, then top countries (0–2 items).
+  // All tabs link to the leaderboard page — no disabled states.
+  const tabs = [
+    { label: 'Global', href: '/leaderboard' },
+    ...topCountries.map((code) => ({
+      label: code,
+      href: `/leaderboard?tab=${code}`,
+    })),
+  ];
+
   return (
     <>
       {/* ── Leaderboard ──────────────────────────────────────────────── */}
@@ -71,20 +80,16 @@ export default function Sidebar({
           </p>
         </div>
 
-        {/* Tab strip — UK/NG filtering is Phase 2; Global is active for MVP */}
+        {/* Tab strip — dynamic: Global + top countries by aggregate points */}
         <div className='flex gap-1 mb-3'>
-          {['Global', 'UK', 'NG'].map((tab) => (
-            <span
-              key={tab}
-              className={[
-                'text-body-xs px-3 py-1 rounded-md border',
-                tab === 'Global'
-                  ? 'bg-canvas-subtle border-stroke text-fg'
-                  : 'border-transparent text-fg-muted cursor-not-allowed opacity-60',
-              ].join(' ')}
+          {tabs.map(({ label, href }) => (
+            <Link
+              key={label}
+              href={href}
+              className='text-body-xs px-3 py-1 rounded-md border border-transparent text-fg-muted hover:border-stroke hover:bg-canvas-subtle hover:text-fg transition-colors duration-150'
             >
-              {tab}
-            </span>
+              {label}
+            </Link>
           ))}
         </div>
 
@@ -97,8 +102,9 @@ export default function Sidebar({
           <div>
             {topUsers.map((user, i) => {
               const rank = i + 1;
-              const av = avatarStyle(user.username);
-              const badge = BADGE_META[user.badge] ?? BADGE_META.watcher;
+              const av = avatarStyle(user.username ?? '');
+              const badge =
+                BADGE_META[user.badge ?? 'watcher'] ?? BADGE_META.watcher;
 
               return (
                 <div
@@ -123,7 +129,10 @@ export default function Sidebar({
                     className='w-7.5 h-7.5 rounded-full flex items-center justify-center text-caption font-medium shrink-0'
                     style={{ background: av.bg, color: av.fg }}
                   >
-                    {getInitials(user.display_name ?? null, user.username)}
+                    {getInitials(
+                      user.display_name ?? null,
+                      user.username ?? '',
+                    )}
                   </div>
 
                   {/* Name + sub */}
@@ -139,7 +148,7 @@ export default function Sidebar({
 
                   {/* Points */}
                   <span className='text-body-xs font-medium text-brand shrink-0'>
-                    {user.points.toLocaleString()}
+                    {(user.points ?? 0).toLocaleString()}
                   </span>
                 </div>
               );
@@ -147,7 +156,6 @@ export default function Sidebar({
           </div>
         )}
 
-        {/* Now a Link, not a button */}
         <Link
           href='/leaderboard'
           className='block w-full mt-3 text-body-xs font-medium px-3.5 py-1.5 border border-stroke rounded-md text-center text-fg hover:bg-canvas-subtle transition-colors duration-150 cursor-pointer'
@@ -178,7 +186,7 @@ export default function Sidebar({
           GET /api/v1/reports?type=phishing&amp;country=NG&amp;limit=50
         </div>
         <Link
-          href='researchers/apply'
+          href='/researchers/apply'
           className='w-full block text-body-xs font-medium px-3.5 py-1.5 border border-stroke rounded-md text-center text-fg hover:bg-canvas-subtle transition-colors duration-150'
         >
           Request API key ↗

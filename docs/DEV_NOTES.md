@@ -588,3 +588,104 @@ The function returns the raw key in the results panel. Copy it, email it to the 
 - Pending/approved: form hidden, status banner shown
 - Rejected: contact email shown for appeals
 - Guard: .in('status', ['pending', 'approved']) — rejected users can reapply
+
+---
+
+## 2026-06-10
+
+### Email exposure fix — fix/email-exposure
+
+**Problem:**
+The `users` table was directly accessible to the `anon` role via Supabase's auto-generated REST API. Anyone with the public anon key (visible in the browser network tab) could run:
+
+```sh
+GET /rest/v1/users?select=\*
+```
+
+...and retrieve all columns including email addresses. The existing RLS policy "Leaderboard fields are publicly readable" using(true) was not sufficient protection because it only governs row visibility, not column visibility.
+
+**Fix:**
+
+- Created `public.leaderboard_users` view exposing only safe columns: id, username, display_name, points, badge, country_code
+- View created with `security_invoker = false` (security definer behaviour) so it runs as the owner regardless of calling role
+- Granted SELECT on the view to anon and authenticated
+- Revoked direct SELECT on `public.users` from anon
+- RLS was already enabled on users (confirmed via pg_class query) so Step 4b was not needed
+- View owner set to postgres for clean permission chain
+
+**Verification:**
+
+- `GET /rest/v1/users?select=*` with anon key → permission denied ✅
+- `GET /rest/v1/leaderboard_users?select=*` with anon key → safe columns only ✅
+
+**Application code changes:**
+
+- `src/types/database.ts` — regenerated via Supabase CLI to include leaderboard_users view type (all columns nullable — known limitation of Supabase's type generator for views)
+- `src/app/(public)/leaderboard/page.tsx` — updated getData() query from `from('users')` to `from('leaderboard_users')`
+- `src/app/(public)/page.tsx` — updated two queries: leaderboard top-5 and contributor count stat both changed to `from('leaderboard_users')`. Contributor count was showing 0 for unauthenticated visitors because anon could no longer read the users table directly.
+- `src/components/layout/Sidebar.tsx` — LeaderboardUser type changed from `Pick<Tables<'users'>, ...>` to `Tables<'leaderboard_users'>`. Null guards added at three points of use (username, points, badge) because the type generator marks all view columns as nullable.
+
+**Note on supabase/.temp/cli-latest:**
+Modified as a side effect of running `supabase gen types` — not a meaningful change, included in commit for cleanliness.
+
+**Closes:** [Issue #9](https://github.com/The-Root-Access-Network/ubuntu-scam-bank/issues/9)
+
+## 2026-06-10 (continued)
+
+### Feedback form, contact page, and site-wide footer — feature/feedback-form
+
+- Created `feedback` table in Supabase with RLS enabled and no anon/authenticated policies — all writes go through the admin client (service role). Added check constraint on `role` column to stay in sync with Zod enum in the API route. Index on `created_at desc` for dashboard queries.
+
+- `POST /api/feedback` — Zod validation, admin client insert, optional Resend notification gated on `RESEND_API_KEY`. If key is absent, insert still completes and no error surfaces to the user. Resend `from` domain will need updating to verified subdomain once `scambank.ubuntubridgeinitiatives.org` (or equivalent) is confirmed. Recipient address to update from placeholder to `therootaccessnetwork@africybercore.com` before Resend goes live.
+
+- Footer replaced the thin strip with a four-column layout: brand + mission line, Platform links, Researchers links, Organisation links (including external links to UBI and TRAN sites). Bottom bar has copyright and tagline. Footer applied to all public pages in a separate commit.
+
+- Nav "For researchers" link updated from `#researchers` anchor to `/researchers/apply`. No auth-conditional logic needed — the apply page already handles unauthenticated visitors gracefully.
+
+- Tested locally: form submits, success state renders, row written to Supabase correctly. Resend skipped silently as expected (no API key set). Email delivery will be verified once domain is verified and key is added to Cloudflare runtime secrets.
+
+### Hero copy update and post-merge fixes — chore/hero-copy
+
+- Added bold incentive copy to homepage hero between the h1 and the existing description paragraph: "Report scams. Earn points. Top contributors get rewarded." with a non-binding follow-up line about contributor rewards coming soon. Copy intentionally avoids hard promises on timeline or reward type.
+- Added `minLength={2}` to Full name input in FeedbackForm for client-side parity with the Zod schema minimum.
+- Added Footer to the unauthenticated render path of `/researchers/apply` — was missing from that branch.
+- Simplified organisation field validation in `/api/feedback route` — replaced `.optional().or(z.literal(''))` with `.optional().transform()` pattern. Cleaner handling of empty string from HTML form inputs. The || null conversion at the insert site is unaffected.
+
+---
+
+## 2026-06-11
+
+### Dynamic sidebar tabs and leaderboard filters — feature/sidebar-leaderboard-dynamic
+
+- Modified `get_monthly_leaderboard()` Postgres function to accept an optional `target_month date` parameter (defaults to current month). Body uses `target_month::timestamptz` — safe since Supabase runs UTC. RPC call site now passes `{ target_month: '${month}-01' }`. Regenerated types — function shows two overload signatures (Args: never and Args: { target_month?: string }) which is expected behaviour from the type generator for overloaded functions.
+
+- Sidebar country tabs are now dynamic. `getPageData()` in `page.tsx` fetches all `country_code` + `points` rows from `leaderboard_users` and aggregates in JS (PostgREST doesn't support GROUP BY). Top 2 countries by aggregate points are passed as `topCountries: string[]` to Sidebar. If fewer than 2 countries have data, fewer tabs render — no defensive code needed, `slice(0, 2)` handles it.
+
+- `export const revalidate = 300` added to `page.tsx` — full page cached for 5 minutes at the edge. This affects the feed (latest 20 reports) as well as the sidebar tabs. Acceptable at current scale — flag for review if real-time feed freshness becomes a priority.
+
+- `COUNTRY_TABS` constant removed from leaderboard page entirely. Country validation simplified: any 2-char tab value that isn't 'global' or 'monthly' is treated as a country code. Invalid codes return zero rows and render the empty state — no list validation needed.
+
+- `CountrySelect` client component — full-world dropdown from `countries-data.json`, routes to `/leaderboard?tab={code}` on change. "All countries" option routes to `/leaderboard` (global).
+
+- `MonthSelect` client component — generates options from launch month (`2026-05`) through current month, descending (most recent first). Uses UTC throughout to avoid timezone edge cases at month boundaries. Only rendered by the server when `tab === 'monthly'` — no client-side show/hide needed. Routes to `/leaderboard?tab=monthly&month={YYYY-MM}`.
+
+- URL shape for monthly history: `/leaderboard?tab=monthly&month=2026-05`. Shareable and readable. Footer summary now shows the full month name (e.g. "May 2026") derived from `selectedMonth` via `toLocaleDateString`.
+
+- Confirm `countries-data.json` import path in `CountrySelect.tsx` is correct before deploy — DEV_NOTES recorded it as `public/` originally but import uses `@/lib/`. Verify file location matches.
+
+- Checked, it is correct `src/lib/countries-data.json`.
+
+### Researcher API detail endpoint and codebase cleanup — feature/researcher-api-report-detail
+
+- Extracted `validateApiKey` from `/api/v1/reports/route.ts` into `src/lib/api/validateApiKey.ts`. Exported `ApiKeyValidation` type. Shared across all v1 route handlers — no logic changes, pure refactor.
+Note: function makes two sequential DB calls per request (lookup + last_used_at update). When Phase 4 rate limiting is implemented, consider folding into a single operation.
+
+- Added `GET /api/v1/reports/:id` at `src/app/api/v1/reports/[id]/route.ts`. Same auth pattern as the list endpoint. UUID validated via regex before DB call — returns 400 for malformed IDs rather than letting Postgres reject with a 500. Uses `maybeSingle()` — returns 404 cleanly when report not found or not published. Excludes `raw_content` (residual PII risk) and `submitted_by` (internal user ID). Returns full indicators in response body.
+
+- Deleted `src/app/api/triage/route.ts` and `src/app/api/reports/route.ts` — both were stubs with no logic, serving "coming soon" responses on public paths. Removed to avoid information leakage and future confusion.
+
+- Removed API reference link from footer Researchers section — was a placeholder pointing to `/researchers/apply#api` which doesn't exist. Link will be restored when an actual API docs page is built in Phase 4.
+
+- `src/components/ui/` left in place — conventional location for shared UI primitives. Empty for now; `.gitkeep` added.
+
+- Tested locally: list endpoint still works after validateApiKey extraction. Detail endpoint returns correct shape with full indicators. UUID validation returns 400 for malformed IDs. 404 for unpublished or nonexistent reports.

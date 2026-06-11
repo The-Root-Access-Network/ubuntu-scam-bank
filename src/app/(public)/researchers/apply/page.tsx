@@ -2,6 +2,7 @@
 
 import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
+import Footer from '@/components/layout/Footer';
 import ApplicationForm from '@/components/researchers/ApplicationForm';
 import { createClient } from '@/lib/supabase/server';
 import type { Metadata } from 'next';
@@ -53,7 +54,9 @@ export default async function ResearchersApplyPage() {
           className='bg-canvas border border-stroke-faint rounded-lg p-4'
         >
           <p className='text-body-sm font-medium text-fg mb-1'>{label}</p>
-          <p className='text-body-xs font-medium text-fg-muted leading-relaxed'>{desc}</p>
+          <p className='text-body-xs font-medium text-fg-muted leading-relaxed'>
+            {desc}
+          </p>
         </div>
       ))}
     </div>
@@ -81,6 +84,8 @@ export default async function ResearchersApplyPage() {
             </div>
           </Container>
         </main>
+
+        <Footer />
       </div>
     );
   }
@@ -140,6 +145,8 @@ export default async function ResearchersApplyPage() {
           )}
         </Container>
       </main>
+
+      <Footer />
     </div>
   );
 }

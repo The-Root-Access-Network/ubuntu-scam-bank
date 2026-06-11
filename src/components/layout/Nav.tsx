@@ -52,7 +52,7 @@ export default function Nav() {
               Leaderboard
             </Link>
             <Link
-              href='#researchers'
+              href='/researchers/apply'
               className='hover:text-fg transition-colors duration-150'
             >
               For researchers

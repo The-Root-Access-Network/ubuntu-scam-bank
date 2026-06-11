@@ -14,6 +14,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
+import Footer from '@/components/layout/Footer';
 import ProfileForm from '@/components/profile/ProfileForm';
 
 export const metadata = { title: 'Your profile' };
@@ -59,6 +60,8 @@ export default async function ProfilePage() {
           </div>
         </Container>
       </main>
+
+      <Footer />
     </div>
   );
 }
