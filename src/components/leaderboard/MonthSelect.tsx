@@ -41,10 +41,9 @@ function generateMonthOptions(): { value: string; label: string }[] {
   return options;
 }
 
-const MONTH_OPTIONS = generateMonthOptions();
-
 export default function MonthSelect({ selectedMonth }: Props) {
   const router = useRouter();
+  const monthOptions = generateMonthOptions();
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     router.push(`/leaderboard?tab=monthly&month=${e.target.value}`);
@@ -57,7 +56,7 @@ export default function MonthSelect({ selectedMonth }: Props) {
       aria-label='Select month'
       className='text-body-xs border border-stroke rounded-md px-3 py-1.5 bg-canvas text-fg focus:border-brand focus:outline-none transition-colors duration-150 cursor-pointer'
     >
-      {MONTH_OPTIONS.map(({ value, label }) => (
+      {monthOptions.map(({ value, label }) => (
         <option key={value} value={value}>
           {label}
         </option>

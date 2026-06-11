@@ -8,7 +8,7 @@ import countryData from '@/lib/countries-data.json';
 interface Props {
   // The current tab value from searchParams — a 2-char country code,
   // 'global', 'monthly', or undefined. Used to set the selected option.
-  currentTab: string;
+  currentTab: string | undefined;
 }
 
 export default function CountrySelect({ currentTab }: Props) {
@@ -17,7 +17,7 @@ export default function CountrySelect({ currentTab }: Props) {
   // Determine selected value: a 2-char code that isn't a reserved tab = country filter.
   // Everything else (global, monthly, or absent) = empty string = "All countries".
   const isCountryTab =
-    currentTab.length === 2 &&
+    currentTab && currentTab.length === 2 &&
     currentTab !== 'global' &&
     currentTab !== 'monthly';
   const selected = isCountryTab ? currentTab.toUpperCase() : '';
