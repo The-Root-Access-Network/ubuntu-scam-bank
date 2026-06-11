@@ -3,6 +3,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 
 interface Props {
   // Current selected month in YYYY-MM format. Defaults to current month
@@ -43,7 +44,7 @@ function generateMonthOptions(): { value: string; label: string }[] {
 
 export default function MonthSelect({ selectedMonth }: Props) {
   const router = useRouter();
-  const monthOptions = generateMonthOptions();
+  const monthOptions = useMemo(() => generateMonthOptions(), []);
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
     router.push(`/leaderboard?tab=monthly&month=${e.target.value}`);
