@@ -1,19 +1,30 @@
 // src/app/(public)/leaderboard/page.tsx
 
 /**
- * Leaderboard page showing top contributors globally, by country, and for the current month. Users can easily see how they rank against others and track their progress towards the next badge tier.
+ * Leaderboard page showing top contributors globally, by country, and for the current month.
  *
- * Data is fetched server-side in one batch to avoid waterfalls and ensure fast load times. The page supports tabbed navigation between global, monthly, and country-specific leaderboards, with the active tab reflected in the URL for easy sharing.
+ * Tab routing via searchParams:
+ *   ?tab=global (default)  — all-time global leaderboard
+ *   ?tab=monthly           — current month (or ?month=YYYY-MM for a specific month)
+ *   ?tab={CC}              — any 2-character ISO country code
  *
- * Each leaderboard entry displays the contributor's rank, avatar (with deterministic colors), name, badge, country, and points. The design is responsive, with certain details hidden on smaller screens to maintain readability.
+ * Country filtering uses a full-world dropdown (CountrySelect) rather than a fixed
+ * list of tabs, allowing any country to be selected.
  *
- * The page also includes a footer summarizing the current view, such as the number of contributors shown and the scope of the leaderboard (e.g. "Showing 50 contributors · Global · All time").
+ * Month filtering uses MonthSelect, only shown when tab=monthly. Options run from
+ * the launch month (2026-05) through the current month, descending.
+ *
+ * COUNTRY_TABS constant removed — country validation simplified to: any 2-char
+ * string that isn't 'global' or 'monthly' is treated as a country code. Invalid
+ * codes return an empty leaderboard (Supabase returns zero rows, empty state shown).
  */
 
 import Link from 'next/link';
 import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
 import Footer from '@/components/layout/Footer';
+import CountrySelect from '@/components/leaderboard/CountrySelect';
+import MonthSelect from '@/components/leaderboard/MonthSelect';
 import { createClient } from '@/lib/supabase/server';
 import { BADGE_META, getInitials } from '@/lib/utils';
 import type { Metadata } from 'next';
@@ -41,16 +52,6 @@ const RANK_COLOR: Record<number, string> = {
   3: '#993C1D',
 };
 
-// Fixed country tabs — primary target markets
-const COUNTRY_TABS = [
-  { code: 'NG', label: 'Nigeria' },
-  { code: 'GB', label: 'UK' },
-  { code: 'GH', label: 'Ghana' },
-  { code: 'ZA', label: 'South Africa' },
-  { code: 'US', label: 'USA' },
-  { code: 'KE', label: 'Kenya' },
-];
-
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type GlobalEntry = {
@@ -71,28 +72,58 @@ type MonthlyEntry = {
   monthly_points: number;
 };
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+// Returns the current month as YYYY-MM string in UTC.
+function currentMonthString(): string {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+// Determines whether a tab value is a country code filter.
+// Anything 2 chars that isn't a reserved keyword is treated as a country code.
+function isCountryTab(tab: string): boolean {
+  return tab.length === 2 && tab !== 'global' && tab !== 'monthly';
+}
+
 // ── Data fetching ─────────────────────────────────────────────────────────────
 
-async function getData(activeTab: string) {
+async function getData(activeTab: string, month: string | undefined) {
   const supabase = await createClient();
 
   if (activeTab === 'monthly') {
-    const { data } = await supabase.rpc('get_monthly_leaderboard');
-    return { entries: (data ?? []) as MonthlyEntry[], isMonthly: true };
+    // Resolve the month to query: use the provided month param, or current month.
+    // Append '-01' to form a valid date string for the Postgres function.
+    const resolvedMonth = month ?? currentMonthString();
+    const targetMonth = `${resolvedMonth}-01`;
+
+    const { data } = await supabase.rpc('get_monthly_leaderboard', {
+      target_month: targetMonth,
+    });
+    return {
+      entries: (data ?? []) as MonthlyEntry[],
+      isMonthly: true,
+      resolvedMonth,
+    };
   }
 
-  const countryCode = COUNTRY_TABS.find((c) => c.code === activeTab)?.code;
-
+  // Global or country-filtered query via leaderboard_users view.
   let query = supabase
     .from('leaderboard_users')
     .select('id, username, display_name, badge, country_code, points')
     .order('points', { ascending: false })
     .limit(50);
 
-  if (countryCode) query = query.eq('country_code', countryCode);
+  if (isCountryTab(activeTab)) {
+    query = query.eq('country_code', activeTab.toUpperCase());
+  }
 
   const { data } = await query;
-  return { entries: (data ?? []) as GlobalEntry[], isMonthly: false };
+  return {
+    entries: (data ?? []) as GlobalEntry[],
+    isMonthly: false,
+    resolvedMonth: undefined,
+  };
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -100,22 +131,23 @@ async function getData(activeTab: string) {
 export default async function LeaderboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; month?: string }>;
 }) {
-  const { tab = 'global' } = await searchParams;
-  const { entries, isMonthly } = await getData(tab);
+  const { tab = 'global', month } = await searchParams;
+  const { entries, isMonthly, resolvedMonth } = await getData(tab, month);
 
-  const activeCountryTab = COUNTRY_TABS.find((c) => c.code === tab);
+  // Resolved month for MonthSelect — current month when param is absent.
+  const selectedMonth = resolvedMonth ?? currentMonthString();
 
-  // Build tab href helper
   function tabHref(t: string) {
     return t === 'global' ? '/leaderboard' : `/leaderboard?tab=${t}`;
   }
 
   function tabClass(t: string) {
+    const isActive = tab === t || (t === 'global' && tab === 'global');
     return [
       'text-body-xs px-3.5 py-1.5 rounded-md border transition-colors duration-150',
-      tab === t || (t === 'global' && tab === 'global')
+      isActive
         ? 'bg-brand text-white border-brand'
         : 'bg-canvas border-stroke text-fg-muted hover:text-fg',
     ].join(' ');
@@ -137,8 +169,10 @@ export default async function LeaderboardPage({
             </p>
           </div>
 
-          {/* Tab strip */}
-          <div className='flex flex-wrap gap-1.5 mb-5'>
+          {/* Tab strip — Global and This month are fixed links.
+              Country filtering is handled by CountrySelect dropdown.
+              MonthSelect appears inline when monthly tab is active. */}
+          <div className='flex flex-wrap items-center gap-2 mb-5'>
             <Link href={tabHref('global')} className={tabClass('global')}>
               Global
             </Link>
@@ -150,15 +184,11 @@ export default async function LeaderboardPage({
               ·
             </span>
 
-            {COUNTRY_TABS.map((c) => (
-              <Link
-                key={c.code}
-                href={tabHref(c.code)}
-                className={tabClass(c.code)}
-              >
-                {c.label}
-              </Link>
-            ))}
+            {/* Country dropdown — full world list, routes to ?tab={code} */}
+            <CountrySelect currentTab={tab} />
+
+            {/* Month picker — only shown when monthly tab is active */}
+            {isMonthly && <MonthSelect selectedMonth={selectedMonth} />}
           </div>
 
           {/* Table */}
@@ -183,9 +213,9 @@ export default async function LeaderboardPage({
               <div className='text-center py-14'>
                 <p className='text-body-sm text-fg-muted'>
                   {tab === 'monthly'
-                    ? 'No contributions recorded this month yet.'
-                    : activeCountryTab
-                      ? `No contributors from ${activeCountryTab.label} yet.`
+                    ? 'No contributions recorded for this period.'
+                    : isCountryTab(tab)
+                      ? 'No contributors from this country yet.'
                       : 'No contributors yet.'}
                 </p>
               </div>
@@ -255,12 +285,14 @@ export default async function LeaderboardPage({
             )}
           </div>
 
-          {/* Footer */}
+          {/* Footer summary */}
           <p className='text-caption-sm text-fg-subtle text-center mt-4'>
             Showing {entries.length} contributor
             {entries.length !== 1 ? 's' : ''}
-            {isMonthly ? ' this month' : ' · all time'}
-            {activeCountryTab ? ` · ${activeCountryTab.label}` : ''}
+            {isMonthly
+              ? ` · ${new Date(`${selectedMonth}-01`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' })}`
+              : ' · all time'}
+            {isCountryTab(tab) ? ` · ${tab.toUpperCase()}` : ''}
           </p>
         </Container>
       </main>
