@@ -678,7 +678,7 @@ Modified as a side effect of running `supabase gen types` — not a meaningful c
 ### Researcher API detail endpoint and codebase cleanup — feature/researcher-api-report-detail
 
 - Extracted `validateApiKey` from `/api/v1/reports/route.ts` into `src/lib/api/validateApiKey.ts`. Exported `ApiKeyValidation` type. Shared across all v1 route handlers — no logic changes, pure refactor.
-Note: function makes two sequential DB calls per request (lookup + last_used_at update). When Phase 4 rate limiting is implemented, consider folding into a single operation.
+  Note: function makes two sequential DB calls per request (lookup + last_used_at update). When Phase 4 rate limiting is implemented, consider folding into a single operation.
 
 - Added `GET /api/v1/reports/:id` at `src/app/api/v1/reports/[id]/route.ts`. Same auth pattern as the list endpoint. UUID validated via regex before DB call — returns 400 for malformed IDs rather than letting Postgres reject with a 500. Uses `maybeSingle()` — returns 404 cleanly when report not found or not published. Excludes `raw_content` (residual PII risk) and `submitted_by` (internal user ID). Returns full indicators in response body.
 
@@ -689,3 +689,49 @@ Note: function makes two sequential DB calls per request (lookup + last_used_at 
 - `src/components/ui/` left in place — conventional location for shared UI primitives. Empty for now; `.gitkeep` added.
 
 - Tested locally: list endpoint still works after validateApiKey extraction. Detail endpoint returns correct shape with full indicators. UUID validation returns 400 for malformed IDs. 404 for unpublished or nonexistent reports.
+
+---
+
+## 2026-06-12
+
+### Cloudflare Workers Builds — deployment pipeline fix
+
+Build pipeline was deploying to production on every branch push because the build command was set to `npm run deploy` (which runs `opennextjs-cloudflare build && opennextjs-cloudflare deploy`), conflating build and deploy into one step.
+
+Fixed by:
+
+- Adding `build:cf` script to package.json: `opennextjs-cloudflare build`
+- Setting dashboard build command to `npm run build:cf`
+- Deploy command remains `npx wrangler deploy` (production only)
+- Non-production deploy command remains `npx wrangler versions upload` (uploads a version with preview URL, does not touch production)
+
+Auth issue during first production deploy attempt: rolling the API token from `My Profile → API` Tokens invalidated the token Workers Builds was using internally. Also, setting `CLOUDFLARE_API_TOKEN` as a build variable conflicted with the native token. Fixed by removing that variable and using "Create new token" from within the build settings API token section — this creates a correctly scoped token wired directly to the build system.
+
+Result: feature branch pushes now produce preview URLs at `https://<branch-name>-ubuntu-scam-bank.therootaccessnetwork.workers.dev` without affecting production. Only main branch pushes update the live URL.
+
+---
+
+## 2026-06-18
+
+### Vercel deployment preparation — chore/vercel-migration
+
+Decision made to migrate hosting from Cloudflare Workers to Vercel to enable custom subdomain setup under  `ubuntubridgeinitiatives.org` (managed on Somto's Vercel account). Cloudflare Workers deployment remains active
+on `ubuntu-scam-bank.therootaccessnetwork.workers.dev` during transition — both platforms can run simultaneously.
+
+Added two files only — no existing Cloudflare config touched:
+
+- `vercel.json` — explicit Next.js build config for Vercel (uses `npm run build`, not the Cloudflare OpenNext build)
+- `.vercelignore` — excludes Cloudflare-specific files from Vercel's build context (`.open-next`, `wrangler.jsonc`, `open-next.config.ts`, `cloudflare-env.d.ts`)
+
+Pending from Somto:
+
+- Create Vercel project connected to ubuntu-scam-bank GitHub repo
+- Add environment variables (sent securely outside repo)
+- Add `scambank.ubuntubridgeinitiatives.org` as custom domain
+- Add Ayomide as project collaborator
+
+After Vercel deployment is confirmed stable and custom domain is live:
+
+- Update Supabase Auth redirect URLs to include new domain
+- Verify Resend domain for `noreply@scambank.ubuntubridgeinitiatives.org`
+- Decommission Cloudflare Workers deployment (if actionable - separate cleanup branch)
