@@ -1,0 +1,4 @@
+.open-next
+wrangler.jsonc
+open-next.config.ts
+cloudflare-env.d.ts
