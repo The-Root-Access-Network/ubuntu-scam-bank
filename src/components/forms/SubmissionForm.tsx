@@ -293,14 +293,18 @@ export default function SubmissionForm() {
       </div>
 
       {/* Country received in */}
-      <div className='flex items-center gap-2 text-body-xs text-fg-muted mt-2'>
-        <IconMapPin size={14} aria-hidden='true' className='shrink-0' />
-        <label htmlFor='country-select'>Country received in:</label>
+      {/* On mobile: label row on top, select full-width below.
+          From sm (640px) up: single inline row as before. */}
+      <div className='flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2 text-body-xs text-fg-muted mt-2'>
+        <div className='flex items-center gap-1.5'>
+          <IconMapPin size={14} aria-hidden='true' className='shrink-0' />
+          <label htmlFor='country-select'>Country received in:</label>
+        </div>
         <select
           id='country-select'
           value={country}
           onChange={(e) => setCountry(e.target.value)}
-          className='text-body-xs border border-stroke rounded-md px-2 py-1 bg-canvas text-fg cursor-pointer'
+          className='w-full sm:w-auto text-body-xs border border-stroke rounded-md px-2 py-1 bg-canvas text-fg cursor-pointer'
         >
           {COUNTRY_OPTIONS.map(({ code, name }) => (
             <option key={code} value={name}>
