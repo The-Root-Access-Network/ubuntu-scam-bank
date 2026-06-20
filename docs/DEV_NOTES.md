@@ -735,3 +735,4 @@ After Vercel deployment is confirmed stable and custom domain is live:
 - Update Supabase Auth redirect URLs to include new domain
 - Verify Resend domain for `noreply@scambank.ubuntubridgeinitiatives.org`
 - Decommission Cloudflare Workers deployment (if actionable - separate cleanup branch)
+- Add new line to push to main branch and check Vercel deployment tracking latest change.
