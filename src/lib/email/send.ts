@@ -16,22 +16,17 @@ interface SendEmailOptions {
   to: string; // recipient email address
   subject: string;
   text: string; // plain text body
-  cc?: string; // additional CC — OPS_CC is always included
 }
 
-export async function sendEmail(options: SendEmailOptions): Promise<void> {
+export async function sendEmail({
+  to,
+  subject,
+  text,
+}: SendEmailOptions): Promise<void> {
   if (!process.env.RESEND_API_KEY) {
-    // Silent skip in local dev and early deploys — Supabase write is the source of truth
-    console.warn(
-      '[email] RESEND_API_KEY not set — skipping email send:',
-      options.subject,
-    );
+    // Skip silently in local dev — insert succeeds, email is skipped.
+    console.log('[email] RESEND_API_KEY not set — skipping email to', to);
     return;
-  }
-
-  const ccAddresses = [OPS_CC];
-  if (options.cc && options.cc !== OPS_CC) {
-    ccAddresses.push(options.cc);
   }
 
   try {
@@ -43,19 +38,19 @@ export async function sendEmail(options: SendEmailOptions): Promise<void> {
       },
       body: JSON.stringify({
         from: FROM,
-        to: [options.to],
-        cc: ccAddresses,
-        subject: options.subject,
-        text: options.text,
+        to: [to], // array
+        cc: [OPS_CC], // array
+        subject,
+        text,
       }),
     });
 
     if (!res.ok) {
       const body = await res.text();
-      console.error('[email] Resend send failed:', res.status, body);
+      console.error('[email] Resend error:', res.status, body);
     }
   } catch (err) {
-    // Non-fatal — email delivery is best-effort; the DB action is already complete
-    console.error('[email] Resend fetch error (non-fatal):', err);
+    // Non-fatal — log for ops visibility, never surface to caller
+    console.error('[email] Send failed (non-fatal):', err);
   }
 }
