@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'UbuntuScamBank <noreply@therootaccessnetwork.com>',
+          from: 'UbuntuScamBank <noreply@scambank.ubuntubridgeinitiatives.org>',
           to: ['therootaccessnetwork@africybercore.com'],
           subject: `New UbuntuScamBank feedback — ${role}`,
           text: emailBody,
