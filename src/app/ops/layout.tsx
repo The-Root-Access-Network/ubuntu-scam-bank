@@ -11,7 +11,13 @@
 
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { IconShieldCheck, IconUsers, IconFileText, IconLayoutDashboard } from '@tabler/icons-react';
+import { headers } from 'next/headers';
+import {
+  IconShieldCheck,
+  IconUsers,
+  IconFileText,
+  IconLayoutDashboard,
+} from '@tabler/icons-react';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import type { Metadata } from 'next';
 
@@ -59,6 +65,15 @@ export default async function OpsLayout({
 
   if (!profile?.is_moderator) redirect('/');
 
+  // ── Derive current pathname for active nav state ──────────────────────────
+  // headers().get('x-pathname') requires middleware to forward it,
+  // so we use the referer-free approach: read next-url from headers.
+  // Next.js 15+ exposes the pathname via the `x-invoke-path` header in layouts.
+  // Fallback: pass pathname through a server action is overkill here —
+  // instead we use CSS data attributes and let each link self-identify.
+  const headersList = await headers();
+  const pathname = headersList.get('x-invoke-path') ?? '';
+
   return (
     <div className='min-h-dvh bg-canvas-subtle flex'>
       {/* ── Sidebar ──────────────────────────────────────────────────────── */}
@@ -67,9 +82,16 @@ export default async function OpsLayout({
         <div className='px-4 py-4 border-b border-stroke-faint'>
           <div className='flex items-center gap-2 mb-0.5'>
             <div className='w-6 h-6 bg-brand rounded flex items-center justify-center shrink-0'>
-              <IconShieldCheck size={14} color='white' strokeWidth={2.5} aria-hidden='true' />
+              <IconShieldCheck
+                size={14}
+                color='white'
+                strokeWidth={2.5}
+                aria-hidden='true'
+              />
             </div>
-            <span className='text-body-sm font-bold text-fg'>UbuntuScamBank</span>
+            <span className='text-body-sm font-bold text-fg'>
+              UbuntuScamBank
+            </span>
           </div>
           <p className='text-caption text-fg-subtle ml-8'>Ops console</p>
         </div>
@@ -77,23 +99,36 @@ export default async function OpsLayout({
         {/* Nav */}
         <nav className='flex-1 py-3 px-2'>
           <ul className='flex flex-col gap-0.5 list-none'>
-            {NAV_LINKS.map(({ href, label, icon: Icon }) => (
-              <li key={href}>
-                <Link
-                  href={href}
-                  className='flex items-center gap-2.5 px-3 py-2 rounded-md text-body-xs text-fg-muted hover:bg-canvas-subtle hover:text-fg transition-colors duration-150'
-                >
-                  <Icon size={15} aria-hidden='true' />
-                  {label}
-                </Link>
-              </li>
-            ))}
+            {NAV_LINKS.map(({ href, label, icon: Icon, exact }) => {
+              const isActive = exact
+                ? pathname === href
+                : pathname.startsWith(href);
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className={[
+                      'flex items-center gap-2.5 px-3 py-2 rounded-md text-body-xs transition-colors duration-150',
+                      isActive
+                        ? 'bg-brand-light text-brand font-medium'
+                        : 'text-fg-muted hover:bg-canvas-subtle hover:text-fg',
+                    ].join(' ')}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <Icon size={15} aria-hidden='true' />
+                    {label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 
         {/* Footer */}
         <div className='px-4 py-3 border-t border-stroke-faint'>
-          <p className='text-caption-sm text-fg-subtle truncate'>{profile.username}</p>
+          <p className='text-caption-sm text-fg-subtle truncate'>
+            {profile.username}
+          </p>
           <Link
             href='/'
             className='text-caption text-fg-muted hover:text-fg transition-colors duration-150'
@@ -104,9 +139,7 @@ export default async function OpsLayout({
       </aside>
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
-      <main className='flex-1 overflow-auto'>
-        {children}
-      </main>
+      <main className='flex-1 overflow-auto'>{children}</main>
     </div>
   );
 }

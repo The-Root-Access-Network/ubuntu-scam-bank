@@ -17,7 +17,7 @@ export interface UserRow {
   created_at: string;
   email: string | null;
   is_moderator: boolean;
-  banned_until: string | null; // from auth.users
+  banned_until: string | null;
 }
 
 export default function UserSearch({ users }: { users: UserRow[] }) {
@@ -59,21 +59,18 @@ export default function UserSearch({ users }: { users: UserRow[] }) {
 
       {/* Table */}
       <div className='bg-canvas border border-stroke-faint rounded-lg overflow-hidden'>
-        {/* Header */}
-        <div className='grid grid-cols-[1fr_110px_70px_160px] gap-3 px-4 py-2.5 border-b border-stroke-faint bg-canvas-subtle'>
+        {/* Header — 4 columns: user info, badge, points, actions */}
+        <div className='grid grid-cols-[1fr_120px_80px_140px] gap-4 px-4 py-2.5 border-b border-stroke-faint bg-canvas-subtle'>
           <div className='text-caption-sm text-fg-muted uppercase tracking-label'>
             User
           </div>
-          <div className='text-caption-sm text-fg-muted uppercase tracking-label'>
+          <div className='text-caption-sm text-fg-muted uppercase tracking-label text-center'>
             Badge
           </div>
-          <div className='text-caption-sm text-fg-muted uppercase tracking-label text-right'>
+          <div className='text-caption-sm text-fg-muted uppercase tracking-label text-center'>
             Points
           </div>
-          {/* <div className='text-caption-sm text-fg-muted uppercase tracking-label'>
-            Country
-          </div> */}
-          <div className='text-caption-sm text-fg-muted uppercase tracking-label'>
+          <div className='text-caption-sm text-fg-muted uppercase tracking-label text-center'>
             Actions
           </div>
         </div>
@@ -92,17 +89,18 @@ export default function UserSearch({ users }: { users: UserRow[] }) {
               <div
                 key={user.id}
                 className={[
-                  'grid grid-cols-[1fr_110px_70px_160px] gap-3 px-4 py-3 items-start',
+                  'grid grid-cols-[1fr_120px_80px_140px] gap-4 px-4 py-3.5 items-center',
                   i < filtered.length - 1 ? 'border-b border-stroke-faint' : '',
                 ].join(' ')}
               >
-                {/* User */}
+                {/* User — name, handle, country, email, join date */}
                 <div className='min-w-0'>
                   <p className='text-body-xs font-medium text-fg truncate'>
                     {user.display_name ?? user.username}
                   </p>
                   <p className='text-caption text-fg-muted truncate'>
-                    @{user.username} {user.country_code ? `· ${user.country_code}` : ''}
+                    @{user.username}
+                    {user.country_code ? ` · ${user.country_code}` : ''}
                   </p>
                   {user.email && (
                     <p className='text-caption text-fg-subtle truncate'>
@@ -119,8 +117,8 @@ export default function UserSearch({ users }: { users: UserRow[] }) {
                   </p>
                 </div>
 
-                {/* Badge */}
-                <div>
+                {/* Badge — centred */}
+                <div className='flex justify-center'>
                   <span
                     className={`text-caption-sm font-medium px-2 py-0.5 rounded-full ${badge.classes}`}
                   >
@@ -128,22 +126,16 @@ export default function UserSearch({ users }: { users: UserRow[] }) {
                   </span>
                 </div>
 
-                {/* Points */}
-                <div className='text-body-xs text-fg text-right'>
+                {/* Points — centred */}
+                <div className='text-body-xs text-fg text-center'>
                   {user.points.toLocaleString()}
                 </div>
 
-                {/* Country */}
-                {/* <div className='text-body-xs text-fg-muted'>
-                  {user.country_code ?? '—'}
-                </div> */}
-
-                {/* Actions */}
-                <div>
+                {/* Actions — centred */}
+                <div className='flex justify-center'>
                   <UserActions
                     userId={user.id}
                     username={user.username}
-                    // email={user.email ?? ''}
                     isBanned={banned}
                     isModerator={user.is_moderator}
                   />
@@ -155,7 +147,8 @@ export default function UserSearch({ users }: { users: UserRow[] }) {
       </div>
 
       <p className='text-caption-sm text-fg-subtle text-center mt-3'>
-        Showing {filtered.length} of {users.length} users
+        Showing {filtered.length} of {users.length} user
+        {users.length !== 1 ? 's' : ''}
       </p>
     </>
   );

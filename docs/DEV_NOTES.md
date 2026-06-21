@@ -736,15 +736,51 @@ After Vercel deployment is confirmed stable and custom domain is live:
 - Verify Resend domain for `noreply@scambank.ubuntubridgeinitiatives.org`
 - Decommission Cloudflare Workers deployment (if actionable - separate cleanup branch)
 
-```ts
-import { Resend } from 'resend';
+---
 
-const resend = new Resend('re_H84LTHJP_AWmvK6BYdimjsjNe7eqntn1B');
+## 2026-06-21
 
-resend.emails.send({
-  from: 'onboarding@resend.dev',
-  to: 'therootaccessnetwork@africybercore.com',
-  subject: 'Hello World',
-  html: '<p>Congrats on sending your <strong>first email</strong>!</p>'
-});
-```
+### Ops admin panel — feature/admin-panel
+
+**What was built:**
+
+- Protected `/ops` console with Overview, Users, and Researcher Applications sections
+- Middleware auth gate for `/ops` and `/api/ops`
+- Layout-level and page-level moderator checks using `users.is_moderator`
+- Overview stats fetched server-side via the admin Supabase client
+- User management table with client-side search and ban/unban/delete actions
+- Researcher application review tabs with approve/reject actions
+- `/api/ops/*` route handlers for user actions and application approval/rejection
+- Shared Resend wrapper and plain-text templates for ops emails
+
+**Architecture decisions:**
+
+- Ops pages stay as Server Components by default; only action/search widgets are client islands
+- Admin Supabase client is used only in trusted server code and never imported into client components
+- `requireModerator()` centralises API route authorization, but pages still repeat their own moderator checks per the Phase 4 security model
+- `/ops` deliberately avoids the public Nav and uses a stripped-down internal layout
+- Researcher approval now calls the existing database RPC and returns the raw key once to the moderator UI
+
+**Security considerations:**
+
+- Five-layer model is intentional: middleware auth, layout moderator check, page moderator check, API route guard, and no public admin state
+- Destructive user actions re-check `is_moderator` server-side so moderators cannot be actioned by client tampering
+- User deletion captures email/username before deleting the auth user so the notification can still be sent
+- Resend sends are best-effort; Supabase mutations remain the source of truth
+- Ops routes currently rely on Supabase cookie behaviour plus moderator checks; an explicit Origin/CSRF guard is a good hardening pass before broader admin usage
+
+**Known limitations / tradeoffs:**
+
+- `/ops/users` fetches up to 1000 auth users for ban status; paginate `auth.admin.listUsers()` before user count grows beyond that
+- User search is client-side and receives the protected ops user list, including emails, after moderator authorization
+- Application approve/reject can race if two moderators act on the same pending row at the same time; the database RPC should enforce pending-status idempotency
+- Approve email delivery is best-effort. The UI displays the key once, but if email delivery fails and the moderator closes without copying, the raw key cannot be recovered
+- Overview counts `reports.status = 'pending'`, while current submission triage can use `under_review`; align statuses when moderation queue work lands
+
+**Future improvements:**
+
+- Add explicit Origin/CSRF protection to `/api/ops/*` POST routes
+- Move repeated moderator page checks into a small server-only helper if more ops pages are added, while keeping independent checks per page
+- Add audit logging for every ops action with moderator id, target id, action, and timestamp
+- Add pagination/sorting to `/ops/users` and `/ops/applications`
+- Add automated tests for `requireModerator()` and all `/api/ops/*` route handlers
