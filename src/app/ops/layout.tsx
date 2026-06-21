@@ -66,18 +66,13 @@ export default async function OpsLayout({
   if (!profile?.is_moderator) redirect('/');
 
   // ── Derive current pathname for active nav state ──────────────────────────
-  // headers().get('x-pathname') requires middleware to forward it,
-  // so we use the referer-free approach: read next-url from headers.
-  // Next.js 15+ exposes the pathname via the `x-invoke-path` header in layouts.
-  // Fallback: pass pathname through a server action is overkill here —
-  // instead we use CSS data attributes and let each link self-identify.
   const headersList = await headers();
   const pathname = headersList.get('x-invoke-path') ?? '';
 
   return (
     <div className='min-h-dvh bg-canvas-subtle flex'>
       {/* ── Sidebar ──────────────────────────────────────────────────────── */}
-      <aside className='w-52 shrink-0 bg-canvas border-r border-stroke-faint flex flex-col'>
+      <aside className='w-52 shrink-0 bg-canvas border-r border-stroke-faint flex flex-col sticky top-0 h-dvh overflow-y-auto'>
         {/* Brand */}
         <div className='px-4 py-4 border-b border-stroke-faint'>
           <div className='flex items-center gap-2 mb-0.5'>
@@ -139,7 +134,7 @@ export default async function OpsLayout({
       </aside>
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
-      <main className='flex-1 overflow-auto'>{children}</main>
+      <main className='flex-1 overflow-y-auto h-dvh'>{children}</main>
     </div>
   );
 }

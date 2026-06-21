@@ -24,14 +24,13 @@ import Footer from '@/components/layout/Footer';
 import SubmissionForm from '@/components/forms/SubmissionForm';
 import FeedSection from '@/components/feed/FeedSection';
 import Sidebar from '@/components/layout/Sidebar';
+import FAQ from '@/components/home/FAQ';
 import { createClient } from '@/lib/supabase/server';
 
-// All page data fetched in one parallel request set.
-// Components receive pre-fetched props — no waterfall, no client fetching.
 async function getPageData() {
   const supabase = await createClient();
 
-  // Auth check for shield score
+  // Auth check for shield score — if user is signed in, fetch their profile for the sidebar
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -78,9 +77,6 @@ async function getPageData() {
           .eq('id', user.id)
           .single()
       : Promise.resolve({ data: null }),
-    // Top countries by aggregate points for dynamic sidebar tabs.
-    // Fetches all rows with a country code from the safe view — aggregation
-    // done in JS since PostgREST doesn't support GROUP BY directly.
     supabase
       .from('leaderboard_users')
       .select('country_code, points')
@@ -201,6 +197,11 @@ export default async function HomePage() {
               />
             </aside>
           </div>
+        </Container>
+
+        {/* FAQ — full width below the two-column grid */}
+        <Container className='pb-8'>
+          <FAQ />
         </Container>
       </main>
 
