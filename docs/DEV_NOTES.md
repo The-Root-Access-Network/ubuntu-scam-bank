@@ -715,7 +715,7 @@ Result: feature branch pushes now produce preview URLs at `https://<branch-name>
 
 ### Vercel deployment preparation — chore/vercel-migration
 
-Decision made to migrate hosting from Cloudflare Workers to Vercel to enable custom subdomain setup under  `ubuntubridgeinitiatives.org` (managed on Somto's Vercel account). Cloudflare Workers deployment remains active
+Decision made to migrate hosting from Cloudflare Workers to Vercel to enable custom subdomain setup under `ubuntubridgeinitiatives.org` (managed on Somto's Vercel account). Cloudflare Workers deployment remains active
 on `ubuntu-scam-bank.therootaccessnetwork.workers.dev` during transition — both platforms can run simultaneously.
 
 Added two files only — no existing Cloudflare config touched:
@@ -735,4 +735,93 @@ After Vercel deployment is confirmed stable and custom domain is live:
 - Update Supabase Auth redirect URLs to include new domain
 - Verify Resend domain for `noreply@scambank.ubuntubridgeinitiatives.org`
 - Decommission Cloudflare Workers deployment (if actionable - separate cleanup branch)
-- Add new line to push to main branch and check Vercel deployment tracking latest change.
+
+---
+
+## 2026-06-21
+
+### Ops admin panel — feature/admin-panel
+
+**What was built:**
+
+- Protected `/ops` console with Overview, Users, and Researcher Applications sections
+- Middleware auth gate for `/ops` and `/api/ops`
+- Layout-level and page-level moderator checks using `users.is_moderator`
+- Overview stats fetched server-side via the admin Supabase client
+- User management table with client-side search and ban/unban/delete actions
+- Researcher application review tabs with approve/reject actions
+- `/api/ops/*` route handlers for user actions and application approval/rejection
+- Shared Resend wrapper and plain-text templates for ops emails
+
+**Architecture decisions:**
+
+- Ops pages stay as Server Components by default; only action/search widgets are client islands
+- Admin Supabase client is used only in trusted server code and never imported into client components
+- `requireModerator()` centralises API route authorization, but pages still repeat their own moderator checks per the Phase 4 security model
+- `/ops` deliberately avoids the public Nav and uses a stripped-down internal layout
+- Researcher approval now calls the existing database RPC and returns the raw key once to the moderator UI
+
+**Security considerations:**
+
+- Five-layer model is intentional: middleware auth, layout moderator check, page moderator check, API route guard, and no public admin state
+- Destructive user actions re-check `is_moderator` server-side so moderators cannot be actioned by client tampering
+- User deletion captures email/username before deleting the auth user so the notification can still be sent
+- Resend sends are best-effort; Supabase mutations remain the source of truth
+- Ops routes currently rely on Supabase cookie behaviour plus moderator checks; an explicit Origin/CSRF guard is a good hardening pass before broader admin usage
+
+**Known limitations / tradeoffs:**
+
+- `/ops/users` fetches up to 1000 auth users for ban status; paginate `auth.admin.listUsers()` before user count grows beyond that
+- User search is client-side and receives the protected ops user list, including emails, after moderator authorization
+- Application approve/reject can race if two moderators act on the same pending row at the same time; the database RPC should enforce pending-status idempotency
+- Approve email delivery is best-effort. The UI displays the key once, but if email delivery fails and the moderator closes without copying, the raw key cannot be recovered
+- Overview counts `reports.status = 'pending'`, while current submission triage can use `under_review`; align statuses when moderation queue work lands
+
+**Future improvements:**
+
+- Add explicit Origin/CSRF protection to `/api/ops/*` POST routes
+- Move repeated moderator page checks into a small server-only helper if more ops pages are added, while keeping independent checks per page
+- Add audit logging for every ops action with moderator id, target id, action, and timestamp
+- Add pagination/sorting to `/ops/users` and `/ops/applications`
+- Add automated tests for `requireModerator()` and all `/api/ops/*` route handlers
+
+### Admin panel (ops console) — feature/admin-panel
+
+Built protected admin panel at `/ops` with five-layer security model: middleware auth redirect, layout moderator check, per-page moderator check, API route guard via `requireModerator()`, and no client-side admin state exposure.
+
+**Pages:**
+
+- `/ops` — overview with four stat cards (users, pending applications, published reports, pending moderation queue)
+- `/ops/users` — full user list with ban status merged from `auth.users`, client-side search, and per-user action modal
+- `/ops/applications` — researcher application review with Pending / Approved / Rejected tabs
+
+**User actions (all via modal, not inline):**
+
+- Temporary ban (1d / 7d / 30d / 90d) via supabase.auth.admin.updateUserById
+- Permanent ban (876000h)
+- Unban via `ban_duration: 'none'`
+- Account deletion via `supabase.auth.admin.deleteUser` — email captured before deletion, contributions anonymised via `ON DELETE SET NULL`
+
+**Researcher application actions:**
+
+- Approve — calls `approve_researcher_application()` RPC, returns raw API key to client in copy-once modal, fires Resend email with key
+- Reject — calls `reject_researcher_application()` RPC, fires Resend rejection email
+
+**Shared utilities:**
+
+- `src/lib/ops/requireModerator.ts` — session + moderator guard for all `/api/ops` routes, returns typed union
+- `src/lib/email/send.ts` — Resend wrapper gated on `RESEND_API_KEY`, always CCs [therootaccessnetwork@africybercore.com](therootaccessnetwork@africybercore.com), non-fatal on failure
+- `src/lib/email/templates.ts` — plain text templates for all six admin action emails
+
+**Security notes:**
+
+- Moderators cannot action other moderators (server-enforced)
+- Moderators cannot action themselves (self-action guard in all routes)
+- `/ops` path chosen over `/admin` to reduce probe surface
+- `middleware.ts` updated to protect `/ops` and `/api/ops` paths
+- Resend `to`/`cc` sent as arrays per API requirement
+
+**Known limitation:**
+
+- `auth.users listUsers()` capped at perPage: 1000 — paginate if user count exceeds this (TODO comment in `ops/users/page.tsx`)
+- Layout active nav state uses x-invoke-path header — fallback to `usePathname()` client component if not available on Vercel
