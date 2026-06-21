@@ -1,5 +1,11 @@
 // src/app/ops/page.tsx
 
+/**
+ * Ops overview — server component.
+ * Layer 3 security: independently verifies moderator status.
+ * Four stat cards fetched in parallel via admin client.
+ */
+
 import { redirect } from 'next/navigation';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import type { Metadata } from 'next';
@@ -48,6 +54,7 @@ export default async function OpsOverviewPage() {
     redirect('/');
   }
 
+  // Layer 3: page-level moderator check
   const { data: profile } = await admin
     .from('users')
     .select('is_moderator')

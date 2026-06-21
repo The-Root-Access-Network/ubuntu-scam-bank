@@ -2,7 +2,7 @@
 
 /**
  * Ops layout — second security layer after middleware.
- * Independently verifies session and is_moderator = true.
+ * Layer 2 of 5 security checks: independently verifies session AND is_moderator = true.
  * Redirects to / if either check fails — never trusts middleware alone.
  *
  * Renders a stripped-down two-column layout: fixed sidebar + scrollable content.
