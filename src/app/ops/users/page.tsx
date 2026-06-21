@@ -8,7 +8,13 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Users' };
 
-export default async function OpsUsersPage() {
+const PER_PAGE = 20;
+
+export default async function OpsUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   // Independent moderator check
   const authClient = await createClient();
   const {
@@ -31,16 +37,25 @@ export default async function OpsUsersPage() {
     .single();
   if (!profile?.is_moderator) redirect('/');
 
-  // ── Fetch public.users and auth.users in parallel ─────────────────────────
+  // ── Pagination ────────────────────────────────────────────────────────────
+  const sp = await searchParams;
+  const page = Math.max(1, parseInt(sp.page ?? '1', 10));
+
+  // ── Fetch public.users (paginated) and auth.users in parallel ─────────────
   const [{ data: publicUsers }, { data: authData }] = await Promise.all([
     admin
       .from('users')
       .select(
         'id, username, display_name, badge, country_code, points, created_at, email, is_moderator',
       )
-      .order('created_at', { ascending: false }),
-    admin.auth.admin.listUsers({ perPage: 1000 }), // TODO: paginate if user count exceeds 1000
+      .order('created_at', { ascending: false })
+      .range((page - 1) * PER_PAGE, page * PER_PAGE - 1),
+    admin.auth.admin.listUsers({ page, perPage: PER_PAGE }),
   ]);
+
+  // auth.admin.listUsers returns total count — use this for page calculation
+  // so both counts stay in sync (auth is the source of truth for user existence)
+  const total = authData && 'total' in authData ? (authData as { total: number }).total : 0;
 
   // Build a map of userId → banned_until from auth.users
   const banMap = new Map<string, string | null>();
@@ -59,12 +74,12 @@ export default async function OpsUsersPage() {
       <div className='mb-6'>
         <h1 className='text-heading text-fg mb-1'>Users</h1>
         <p className='text-body-sm text-fg-muted'>
-          {users.length} registered account{users.length !== 1 ? 's' : ''}.
-          Search filters client-side.
+          {total.toLocaleString()} registered account{total !== 1 ? 's' : ''}.
+          Search filters within this page.
         </p>
       </div>
 
-      <UserSearch users={users} />
+      <UserSearch users={users} total={total} page={page} perPage={PER_PAGE} />
     </div>
   );
 }

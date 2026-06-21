@@ -3,7 +3,12 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { IconSearch } from '@tabler/icons-react';
+import Link from 'next/link';
+import {
+  IconSearch,
+  IconChevronLeft,
+  IconChevronRight,
+} from '@tabler/icons-react';
 import UserActions from './UserActions';
 import { BADGE_META } from '@/lib/utils';
 
@@ -20,7 +25,19 @@ export interface UserRow {
   banned_until: string | null;
 }
 
-export default function UserSearch({ users }: { users: UserRow[] }) {
+interface UserSearchProps {
+  users: UserRow[];
+  total: number;
+  page: number;
+  perPage: number;
+}
+
+export default function UserSearch({
+  users,
+  total,
+  page,
+  perPage,
+}: UserSearchProps) {
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
@@ -38,6 +55,10 @@ export default function UserSearch({ users }: { users: UserRow[] }) {
     if (!user.banned_until) return false;
     return new Date(user.banned_until) > new Date();
   }
+
+  const totalPages = Math.ceil(total / perPage);
+  const hasPrev = page > 1;
+  const hasNext = page < totalPages;
 
   return (
     <>
@@ -78,7 +99,7 @@ export default function UserSearch({ users }: { users: UserRow[] }) {
         {filtered.length === 0 ? (
           <div className='py-10 text-center'>
             <p className='text-body-sm text-fg-muted'>
-              No users match your search.
+              {query ? 'No users match your search.' : 'No users on this page.'}
             </p>
           </div>
         ) : (
@@ -146,10 +167,50 @@ export default function UserSearch({ users }: { users: UserRow[] }) {
         )}
       </div>
 
-      <p className='text-caption-sm text-fg-subtle text-center mt-3'>
-        Showing {filtered.length} of {users.length} user
-        {users.length !== 1 ? 's' : ''}
-      </p>
+      {/* Pagination controls + summary */}
+      <div className='flex items-center justify-between mt-4'>
+        <p className='text-caption-sm text-fg-subtle'>
+          {query
+            ? `${filtered.length} match${filtered.length !== 1 ? 'es' : ''} on this page`
+            : `Page ${page} of ${totalPages} · ${total.toLocaleString()} total`}
+        </p>
+
+        <div className='flex items-center gap-1'>
+          {hasPrev ? (
+            <Link
+              href={`?page=${page - 1}`}
+              className='inline-flex items-center gap-1 text-caption-sm px-2.5 py-1.5 border border-stroke rounded-md text-fg-muted hover:text-fg hover:bg-canvas-subtle transition-colors duration-150'
+            >
+              <IconChevronLeft size={13} aria-hidden='true' />
+              Prev
+            </Link>
+          ) : (
+            <span className='inline-flex items-center gap-1 text-caption-sm px-2.5 py-1.5 border border-stroke-faint rounded-md text-fg-subtle cursor-not-allowed'>
+              <IconChevronLeft size={13} aria-hidden='true' />
+              Prev
+            </span>
+          )}
+
+          <span className='text-caption-sm text-fg-muted px-2'>
+            {page} / {totalPages}
+          </span>
+
+          {hasNext ? (
+            <Link
+              href={`?page=${page + 1}`}
+              className='inline-flex items-center gap-1 text-caption-sm px-2.5 py-1.5 border border-stroke rounded-md text-fg-muted hover:text-fg hover:bg-canvas-subtle transition-colors duration-150'
+            >
+              Next
+              <IconChevronRight size={13} aria-hidden='true' />
+            </Link>
+          ) : (
+            <span className='inline-flex items-center gap-1 text-caption-sm px-2.5 py-1.5 border border-stroke-faint rounded-md text-fg-subtle cursor-not-allowed'>
+              Next
+              <IconChevronRight size={13} aria-hidden='true' />
+            </span>
+          )}
+        </div>
+      </div>
     </>
   );
 }
