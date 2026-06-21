@@ -825,3 +825,29 @@ Built protected admin panel at `/ops` with five-layer security model: middleware
 
 - `auth.users listUsers()` capped at perPage: 1000 — paginate if user count exceeds this (TODO comment in `ops/users/page.tsx`)
 - Layout active nav state uses x-invoke-path header — fallback to `usePathname()` client component if not available on Vercel
+
+---
+
+## 2026-06-22
+
+### Ops sidebar fix, user pagination, and homepage FAQ — fix/ops-sidebar-scroll
+
+**Ops sidebar scroll fix:**
+
+The sidebar was scrolling with the main content because both elements shared the flex container's natural height. Fixed by adding `sticky top-0 h-dvh overflow-y-auto` to the aside element and `overflow-y-auto h-dvh` to the main element. Each now has its own independent scroll context.
+
+**Ops users pagination:**
+
+Added server-side pagination to /ops/users (20 users per page) using searchParams for the page number. Both public.users (.range()) and auth.admin.listUsers({ page, perPage }) are paginated in parallel.
+
+Total count derived from authData — auth.users is the source of truth for user existence. Pagination controls added to UserSearch as Link elements to preserve server-rendered navigation. Client-side search now filters within the current page only (noted in UI).
+
+auth.users type cast updated to use `import type { User }` from @supabase/supabase-js instead of inline unsafe cast.
+
+**Homepage FAQ accordion:**
+
+Added static FAQ accordion to the homepage below the main two-column grid. Eight questions covering submission flow, points, badges, profile, voting, researcher API, and privacy. Client component with one-open-at-a-time state. No data fetching.
+
+**revalidate:**
+
+Homepage page-level revalidate reduced from 300 to 60 (1 minute) — noted as a conscious trade-off between DB load and feed freshness.
