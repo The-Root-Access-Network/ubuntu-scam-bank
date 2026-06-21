@@ -735,3 +735,16 @@ After Vercel deployment is confirmed stable and custom domain is live:
 - Update Supabase Auth redirect URLs to include new domain
 - Verify Resend domain for `noreply@scambank.ubuntubridgeinitiatives.org`
 - Decommission Cloudflare Workers deployment (if actionable - separate cleanup branch)
+
+```ts
+import { Resend } from 'resend';
+
+const resend = new Resend('re_H84LTHJP_AWmvK6BYdimjsjNe7eqntn1B');
+
+resend.emails.send({
+  from: 'onboarding@resend.dev',
+  to: 'therootaccessnetwork@africybercore.com',
+  subject: 'Hello World',
+  html: '<p>Congrats on sending your <strong>first email</strong>!</p>'
+});
+```
