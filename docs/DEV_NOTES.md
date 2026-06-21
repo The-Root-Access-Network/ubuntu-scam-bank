@@ -715,7 +715,7 @@ Result: feature branch pushes now produce preview URLs at `https://<branch-name>
 
 ### Vercel deployment preparation — chore/vercel-migration
 
-Decision made to migrate hosting from Cloudflare Workers to Vercel to enable custom subdomain setup under  `ubuntubridgeinitiatives.org` (managed on Somto's Vercel account). Cloudflare Workers deployment remains active
+Decision made to migrate hosting from Cloudflare Workers to Vercel to enable custom subdomain setup under `ubuntubridgeinitiatives.org` (managed on Somto's Vercel account). Cloudflare Workers deployment remains active
 on `ubuntu-scam-bank.therootaccessnetwork.workers.dev` during transition — both platforms can run simultaneously.
 
 Added two files only — no existing Cloudflare config touched:
@@ -784,3 +784,44 @@ After Vercel deployment is confirmed stable and custom domain is live:
 - Add audit logging for every ops action with moderator id, target id, action, and timestamp
 - Add pagination/sorting to `/ops/users` and `/ops/applications`
 - Add automated tests for `requireModerator()` and all `/api/ops/*` route handlers
+
+### Admin panel (ops console) — feature/admin-panel
+
+Built protected admin panel at `/ops` with five-layer security model: middleware auth redirect, layout moderator check, per-page moderator check, API route guard via `requireModerator()`, and no client-side admin state exposure.
+
+**Pages:**
+
+- `/ops` — overview with four stat cards (users, pending applications, published reports, pending moderation queue)
+- `/ops/users` — full user list with ban status merged from `auth.users`, client-side search, and per-user action modal
+- `/ops/applications` — researcher application review with Pending / Approved / Rejected tabs
+
+**User actions (all via modal, not inline):**
+
+- Temporary ban (1d / 7d / 30d / 90d) via supabase.auth.admin.updateUserById
+- Permanent ban (876000h)
+- Unban via `ban_duration: 'none'`
+- Account deletion via `supabase.auth.admin.deleteUser` — email captured before deletion, contributions anonymised via `ON DELETE SET NULL`
+
+**Researcher application actions:**
+
+- Approve — calls `approve_researcher_application()` RPC, returns raw API key to client in copy-once modal, fires Resend email with key
+- Reject — calls `reject_researcher_application()` RPC, fires Resend rejection email
+
+**Shared utilities:**
+
+- `src/lib/ops/requireModerator.ts` — session + moderator guard for all `/api/ops` routes, returns typed union
+- `src/lib/email/send.ts` — Resend wrapper gated on `RESEND_API_KEY`, always CCs [therootaccessnetwork@africybercore.com](therootaccessnetwork@africybercore.com), non-fatal on failure
+- `src/lib/email/templates.ts` — plain text templates for all six admin action emails
+
+**Security notes:**
+
+- Moderators cannot action other moderators (server-enforced)
+- Moderators cannot action themselves (self-action guard in all routes)
+- `/ops` path chosen over `/admin` to reduce probe surface
+- `middleware.ts` updated to protect `/ops` and `/api/ops` paths
+- Resend `to`/`cc` sent as arrays per API requirement
+
+**Known limitation:**
+
+- `auth.users listUsers()` capped at perPage: 1000 — paginate if user count exceeds this (TODO comment in `ops/users/page.tsx`)
+- Layout active nav state uses x-invoke-path header — fallback to `usePathname()` client component if not available on Vercel
