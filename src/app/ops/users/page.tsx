@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
+import type { User } from '@supabase/supabase-js';
 import UserSearch, { type UserRow } from '@/components/ops/UserSearch';
 import type { Metadata } from 'next';
 
@@ -19,7 +20,7 @@ export default async function OpsUsersPage() {
   try {
     admin = createAdminClient();
   } catch (err) {
-    console.error('[ops/page] createAdminClient failed:', err);
+    console.error('[ops/users] createAdminClient failed:', err);
     redirect('/');
   }
 
@@ -43,11 +44,8 @@ export default async function OpsUsersPage() {
 
   // Build a map of userId → banned_until from auth.users
   const banMap = new Map<string, string | null>();
-  for (const authUser of authData?.users ?? []) {
-    banMap.set(
-      authUser.id,
-      (authUser as { banned_until?: string }).banned_until ?? null,
-    );
+  for (const authUser of (authData?.users ?? []) as User[]) {
+    banMap.set(authUser.id, authUser.banned_until ?? null);
   }
 
   // Merge ban status into public user rows

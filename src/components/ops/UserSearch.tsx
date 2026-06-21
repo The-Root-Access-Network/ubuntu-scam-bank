@@ -60,7 +60,7 @@ export default function UserSearch({ users }: { users: UserRow[] }) {
       {/* Table */}
       <div className='bg-canvas border border-stroke-faint rounded-lg overflow-hidden'>
         {/* Header */}
-        <div className='grid grid-cols-[1fr_100px_80px_80px_100px] gap-3 px-4 py-2.5 border-b border-stroke-faint bg-canvas-subtle'>
+        <div className='grid grid-cols-[1fr_110px_70px_160px] gap-3 px-4 py-2.5 border-b border-stroke-faint bg-canvas-subtle'>
           <div className='text-caption-sm text-fg-muted uppercase tracking-label'>
             User
           </div>
@@ -70,9 +70,9 @@ export default function UserSearch({ users }: { users: UserRow[] }) {
           <div className='text-caption-sm text-fg-muted uppercase tracking-label text-right'>
             Points
           </div>
-          <div className='text-caption-sm text-fg-muted uppercase tracking-label'>
+          {/* <div className='text-caption-sm text-fg-muted uppercase tracking-label'>
             Country
-          </div>
+          </div> */}
           <div className='text-caption-sm text-fg-muted uppercase tracking-label'>
             Actions
           </div>
@@ -92,7 +92,7 @@ export default function UserSearch({ users }: { users: UserRow[] }) {
               <div
                 key={user.id}
                 className={[
-                  'grid grid-cols-[1fr_100px_80px_80px_100px] gap-3 px-4 py-3 items-start',
+                  'grid grid-cols-[1fr_110px_70px_160px] gap-3 px-4 py-3 items-start',
                   i < filtered.length - 1 ? 'border-b border-stroke-faint' : '',
                 ].join(' ')}
               >
@@ -102,7 +102,7 @@ export default function UserSearch({ users }: { users: UserRow[] }) {
                     {user.display_name ?? user.username}
                   </p>
                   <p className='text-caption text-fg-muted truncate'>
-                    @{user.username}
+                    @{user.username} {user.country_code ? `· ${user.country_code}` : ''}
                   </p>
                   {user.email && (
                     <p className='text-caption text-fg-subtle truncate'>
@@ -134,16 +134,16 @@ export default function UserSearch({ users }: { users: UserRow[] }) {
                 </div>
 
                 {/* Country */}
-                <div className='text-body-xs text-fg-muted'>
+                {/* <div className='text-body-xs text-fg-muted'>
                   {user.country_code ?? '—'}
-                </div>
+                </div> */}
 
                 {/* Actions */}
                 <div>
                   <UserActions
                     userId={user.id}
                     username={user.username}
-                    email={user.email ?? ''}
+                    // email={user.email ?? ''}
                     isBanned={banned}
                     isModerator={user.is_moderator}
                   />
