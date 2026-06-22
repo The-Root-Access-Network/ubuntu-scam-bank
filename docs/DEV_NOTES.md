@@ -304,8 +304,8 @@ Not a blocker for current development.
 **Storage bucket name mismatch:**
 
 - Bucket created in Supabase dashboard as scam_reports (underscore)
-- Code referenced scam-reports (hyphen)
-- Fix: corrected BUCKET constant in src/lib/storage/upload.ts
+- Code referenced scam-reports (hyphen) - wrong
+- Fix: corrected BUCKET constant in `src/lib/storage/upload.ts` to reflect scam_reports (undrscore) same as Supabase Bucket
 - Also stripped internal error message from user-facing UploadError for STORAGE_ERROR — users see "File upload failed. Please try again."
 
 **Feed not populating — RLS gap:**
@@ -851,3 +851,27 @@ Added static FAQ accordion to the homepage below the main two-column grid. Eight
 **revalidate:**
 
 Homepage page-level revalidate reduced from 300 to 60 (1 minute) — noted as a conscious trade-off between DB load and feed freshness.
+
+### Report content display and file-only submission fix — `feat/report-content-display`
+
+**File-only submission fix:**
+Submit route previously rejected submissions with no text even when a file was uploaded. Fixed validation to accept a submission as valid if it has either raw text OR a file. File-only submissions now proceed through triage with a fallback prompt: "User submitted a file with no accompanying text. Analyse based on the file type and any available metadata." Image content is not yet read by Claude — that remains a future task (feat/image-triage).
+
+`has_metadata` calculation updated: a file alone counts as metadata, context text is a bonus on top. hashSource for deduplication uses file path when no text is present to avoid all file-only submissions colliding on the same hash.
+
+**Original submission toggle:**
+Report detail pages now show a "View original submission" toggle for the report's original submitter and moderators only. Shows:
+
+- Raw text content in a monospace scrollable block (max 300px height)
+- Uploaded image inline via Next.js Image component
+- PDF and other file types as download links
+- Privacy disclaimer warning on all views
+
+File display uses server-generated signed URLs (1 hour expiry) from Supabase Storage. Moderators use `createAdminClient()` to bypass storage RLS; submitters use the session-aware client (RLS permits own files).
+Signed URL generation is non-fatal — if it fails, file just doesn't display.
+
+**Known issue — raw_content RLS exposure:**
+The current RLS policy on reports grants anon SELECT on all columns including raw_content for published reports. UI correctly gates display behind canViewOriginal, but raw_content is reachable via the Supabase REST API directly. Tracked as a GitHub issue for the next hardening pass — fix is to exclude raw_content from the public policy or create a public view without it.
+
+**Ungating the toggle:**
+If the decision is made to show original submissions publicly, change `canViewOriginal = isSubmitter || isModerator` to `canViewOriginal = true` in `reports/[id]/page.tsx` and use `createAdminClient()` for all signed URL generation.

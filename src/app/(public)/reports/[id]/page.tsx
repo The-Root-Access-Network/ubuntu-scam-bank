@@ -27,6 +27,7 @@ import Footer from '@/components/layout/Footer';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { TYPE_META, SEVERITY_LABELS, relativeTime } from '@/lib/utils';
 import VoteButtons from '@/components/reports/VoteButtons';
+import OriginalSubmission from '@/components/reports/OriginalSubmission';
 import type { Metadata } from 'next';
 
 // ── Static display maps ───────────────────────────────────────────────────────
@@ -58,7 +59,7 @@ async function getReport(id: string) {
     supabase
       .from('reports')
       .select(
-        'id, type, severity, country_code, summary, ai_tags, ai_confidence, confirm_count, dispute_count, view_count, is_novel, submitted_at, submitted_by',
+        'id, type, severity, country_code, summary, ai_tags, ai_confidence, confirm_count, dispute_count, view_count, is_novel, submitted_at, submitted_by, raw_content, file_path, file_type',
       )
       .eq('id', id)
       .eq('status', 'published')
@@ -118,16 +119,48 @@ export default async function ReportPage({
 
   const { report, indicators } = data;
 
-  // ── Auth check for voting — must be inside the request scope ─────────────
+  // ── Auth check ────────────────────────────────────────────────────────────
+  // Determine if the current user can view the original submission.
+  // Eligibility: the submitter themselves, or any moderator.
   const authClient = await createClient();
   const {
     data: { user },
   } = await authClient.auth.getUser();
 
-  const isOwnReport = !!user && user.id === report.submitted_by;
-  const isSignedIn = !!user;
+  let isModerator = false;
+  if (user) {
+    const { data: profile } = await authClient
+      .from('users')
+      .select('is_moderator')
+      .eq('id', user.id)
+      .single();
+    isModerator = profile?.is_moderator ?? false;
+  }
 
-  // Increment view_count — atomic enough for a counter at MVP scale
+  const isSubmitter = !!user && user.id === report.submitted_by;
+  const isOwnReport = isSubmitter;
+  const isSignedIn = !!user;
+  const canViewOriginal = isSubmitter || isModerator;
+
+  // ── Signed URL for file ───────────────────────────────────────────────────
+  // Generated server-side so the private storage bucket policy is bypassed
+  // correctly: moderators use the admin client (service role), submitters
+  // use the session-aware client (RLS permits access to their own file).
+  let fileSignedUrl: string | null = null;
+  if (canViewOriginal && report.file_path) {
+    try {
+      const storageClient = isModerator ? createAdminClient() : authClient;
+      const { data: urlData } = await storageClient.storage
+        .from('scam_reports')
+        .createSignedUrl(report.file_path, 3600); // 1 hour
+      fileSignedUrl = urlData?.signedUrl ?? null;
+    } catch (err) {
+      // Non-fatal — file just won't display
+      console.error('[report-detail] signed URL generation failed:', err);
+    }
+  }
+
+  // ── Increment view count ──────────────────────────────────────────────────
   try {
     const admin = createAdminClient();
     await admin
@@ -138,7 +171,7 @@ export default async function ReportPage({
     console.error('[report-detail] view_count update failed:', err);
   }
 
-  // Group indicators by type for section display
+  // ── Group indicators by type ──────────────────────────────────────────────
   const grouped = indicators.reduce<Record<string, string[]>>((acc, ind) => {
     if (!acc[ind.type]) acc[ind.type] = [];
     acc[ind.type].push(ind.value);
@@ -250,7 +283,15 @@ export default async function ReportPage({
               </div>
             )}
 
-            {/* ── Voting ─────────────────────────────────────────────────────── */}
+            {/* ── Original submission — submitter + moderators only ──────── */}
+            <OriginalSubmission
+              rawContent={report.raw_content}
+              fileSignedUrl={fileSignedUrl}
+              fileType={report.file_type}
+              canViewOriginal={canViewOriginal}
+            />
+
+            {/* ── Voting ─────────────────────────────────────────────────── */}
             <VoteButtons
               reportId={report.id}
               confirmCount={report.confirm_count}
