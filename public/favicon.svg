@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Background rounded square -->
+  <rect width="32" height="32" rx="7" fill="#085041"/>
+  <!-- Shield check path — matches IconShieldCheck visual -->
+  <path
+    d="M16 5 L26 9 L26 17 C26 22 21.5 26.5 16 28 C10.5 26.5 6 22 6 17 L6 9 Z"
+    fill="none"
+    stroke="white"
+    stroke-width="2"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M12 16.5 L14.5 19 L20 13.5"
+    fill="none"
+    stroke="white"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

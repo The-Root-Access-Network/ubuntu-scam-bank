@@ -140,22 +140,24 @@ export default async function ReportPage({
   const isSubmitter = !!user && user.id === report.submitted_by;
   const isOwnReport = isSubmitter;
   const isSignedIn = !!user;
-  const canViewOriginal = isSubmitter || isModerator;
+  // const canViewOriginal = isSubmitter || isModerator;
+
+  // Public access changes
+  const canViewOriginal = true;
+  const canDownloadFile = isSubmitter || isModerator;
 
   // ── Signed URL for file ───────────────────────────────────────────────────
-  // Generated server-side so the private storage bucket policy is bypassed
-  // correctly: moderators use the admin client (service role), submitters
-  // use the session-aware client (RLS permits access to their own file).
+  // Always generated via admin client because public/anonymous users lack 
+  // storage RLS access rules to read files from this bucket directly.
   let fileSignedUrl: string | null = null;
-  if (canViewOriginal && report.file_path) {
+  if (report.file_path) {
     try {
-      const storageClient = isModerator ? createAdminClient() : authClient;
-      const { data: urlData } = await storageClient.storage
+      const adminForStorage = createAdminClient();
+      const { data: urlData } = await adminForStorage.storage
         .from('scam_reports')
         .createSignedUrl(report.file_path, 3600); // 1 hour
       fileSignedUrl = urlData?.signedUrl ?? null;
     } catch (err) {
-      // Non-fatal — file just won't display
       console.error('[report-detail] signed URL generation failed:', err);
     }
   }
@@ -283,12 +285,13 @@ export default async function ReportPage({
               </div>
             )}
 
-            {/* ── Original submission — submitter + moderators only ──────── */}
+            {/* ── Original submission ── */}
             <OriginalSubmission
               rawContent={report.raw_content}
               fileSignedUrl={fileSignedUrl}
               fileType={report.file_type}
               canViewOriginal={canViewOriginal}
+              canDownloadFile={canDownloadFile}
             />
 
             {/* ── Voting ─────────────────────────────────────────────────── */}

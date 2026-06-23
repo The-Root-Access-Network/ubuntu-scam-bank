@@ -14,7 +14,8 @@ interface OriginalSubmissionProps {
   rawContent: string | null;
   fileSignedUrl: string | null;
   fileType: string | null;
-  canViewOriginal: boolean;
+  canViewOriginal: boolean; // Always true, preserved for consistency with parent
+  canDownloadFile: boolean; // Governs raw file/PDF links
 }
 
 export default function OriginalSubmission({
@@ -22,13 +23,14 @@ export default function OriginalSubmission({
   fileSignedUrl,
   fileType,
   canViewOriginal,
+  canDownloadFile,
 }: OriginalSubmissionProps) {
   const [open, setOpen] = useState(false);
 
-  // Only render for submitter or moderators
+  // Fallback structural check
   if (!canViewOriginal) return null;
 
-  // Nothing to show — shouldn't happen but guard anyway
+  // Nothing to show guard
   if (!rawContent && !fileSignedUrl) return null;
 
   const isImage = fileType?.startsWith('image/') ?? false;
@@ -83,39 +85,56 @@ export default function OriginalSubmission({
                 Uploaded file
               </p>
 
+              {/* Images: Render inline for everyone, add context menu soft-deterrent */}
               {isImage && (
                 <Image
                   src={fileSignedUrl}
                   alt='Submitted scam screenshot'
-                  width={800} // Next.js requires base dimensions for aspect ratio calculation
-                  height={400} // even when unoptimized
+                  width={800}
+                  height={400}
                   className='max-w-full h-auto rounded-md border border-stroke-faint block object-contain'
                   style={{ maxHeight: '400px' }}
                   unoptimized
+                  onContextMenu={(e) => e.preventDefault()}
                 />
               )}
 
-              {isPdf && (
-                <a
-                  href={fileSignedUrl}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='inline-flex items-center gap-2 text-body-xs text-brand hover:text-brand-dark transition-colors duration-150'
-                >
-                  Download PDF ↗
-                </a>
-              )}
+              {/* PDFs: Conditional link rendering */}
+              {isPdf &&
+                (canDownloadFile ? (
+                  <a
+                    href={fileSignedUrl}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='inline-flex items-center gap-2 text-body-xs text-brand hover:text-brand-dark transition-colors duration-150'
+                  >
+                    Download PDF ↗
+                  </a>
+                ) : (
+                  <p className='text-body-xs text-fg-muted italic'>
+                    Download available to the original submitter and moderators
+                    only.
+                  </p>
+                ))}
 
-              {!isImage && !isPdf && (
-                <a
-                  href={fileSignedUrl}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='inline-flex items-center gap-2 text-body-xs text-brand hover:text-brand-dark transition-colors duration-150'
-                >
-                  Download file ↗
-                </a>
-              )}
+              {/* General Binary Attachments: Conditional link rendering */}
+              {!isImage &&
+                !isPdf &&
+                (canDownloadFile ? (
+                  <a
+                    href={fileSignedUrl}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='inline-flex items-center gap-2 text-body-xs text-brand hover:text-brand-dark transition-colors duration-150'
+                  >
+                    Download file ↗
+                  </a>
+                ) : (
+                  <p className='text-body-xs text-fg-muted italic'>
+                    Download available to the original submitter and moderators
+                    only.
+                  </p>
+                ))}
             </div>
           )}
 
