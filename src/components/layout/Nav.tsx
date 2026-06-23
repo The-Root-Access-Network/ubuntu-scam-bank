@@ -38,12 +38,18 @@ export default function Nav() {
         {/* Right side */}
         <div className='flex items-center gap-3 md:gap-5'>
           {/* Nav links — hidden on mobile, visible on tablet+ */}
-          <div className='hidden md:flex items-center gap-5 text-body-xs text-fg-muted'>
+          <div className='hidden md:flex items-center gap-5 text-body-sm text-fg-muted'>
             <Link
-              href='#feed'
+              href='/#feed'
               className='hover:text-fg transition-colors duration-150'
             >
               Feed
+            </Link>
+            <Link
+              href='/reports'
+              className='hover:text-fg transition-colors duration-150'
+            >
+              Reports
             </Link>
             <Link
               href='/leaderboard'
@@ -58,7 +64,7 @@ export default function Nav() {
               For researchers
             </Link>
           </div>
-          {/* Client island (Sign in always visible) — auth state lives here, rest of Nav is static */}
+          {/* Client island */}
           <NavAuthButton />
         </div>
       </Container>
