@@ -63,7 +63,7 @@ async function getPageData() {
       )
       .eq('status', 'published')
       .order('submitted_at', { ascending: false })
-      .limit(20),
+      .limit(6),
     supabase
       .from('leaderboard_users')
       .select('id, username, display_name, points, badge, country_code')
