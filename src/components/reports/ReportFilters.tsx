@@ -4,6 +4,7 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import countryData from '@/lib/countries-data.json';
 
 const SCAM_TYPES = [
   { value: '', label: 'All types' },
@@ -63,19 +64,19 @@ export default function ReportFilters({
       </select>
 
       {/* Country filter */}
-      <input
-        type='text'
+      <select
         value={currentCountry}
-        onChange={(e) =>
-          router.push(
-            buildUrl({ country: e.target.value.toUpperCase().slice(0, 2) }),
-          )
-        }
-        placeholder='Country (e.g. NG)'
-        maxLength={2}
-        aria-label='Filter by country code'
-        className='text-body-xs border border-stroke rounded-md px-3 py-1.5 w-36 bg-canvas text-fg placeholder:text-fg-subtle focus:border-brand focus:outline-none transition-colors duration-150 uppercase'
-      />
+        onChange={(e) => router.push(buildUrl({ country: e.target.value }))}
+        aria-label='Filter by country'
+        className='text-body-xs border border-stroke rounded-md px-3 py-1.5 bg-canvas text-fg focus:border-brand focus:outline-none transition-colors duration-150 cursor-pointer'
+      >
+        <option value=''>All countries</option>
+        {countryData.map(({ code, name }) => (
+          <option key={code} value={code}>
+            {name}
+          </option>
+        ))}
+      </select>
 
       {/* Clear filters */}
       {hasFilters && (
