@@ -77,7 +77,7 @@ export default function Footer() {
                 UbuntuScamBank
               </span>
             </Link>
-            <p className='text-body-xs text-fg-muted leading-relaxed max-w-56'>
+            <p className='text-body-xs text-fg-muted leading-relaxed md:max-w-56'>
               A community-powered scam intelligence platform by the Ubuntu
               Bridge Initiative. Report scams. Protect others.
             </p>
@@ -86,7 +86,7 @@ export default function Footer() {
           {/* Link columns */}
           {FOOTER_LINKS.map(({ heading, links }) => (
             <div key={heading}>
-              <p className='text-caption text-fg-muted uppercase tracking-label mb-3'>
+              <p className='text-body-xs font-bold text-fg-muted uppercase tracking-label mb-3'>
                 {heading}
               </p>
               <ul className='flex flex-col gap-2.5 list-none p-0 m-0'>

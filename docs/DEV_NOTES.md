@@ -855,11 +855,13 @@ Homepage page-level revalidate reduced from 300 to 60 (1 minute) — noted as a 
 ### Report content display and file-only submission fix — `feat/report-content-display`
 
 **File-only submission fix:**
+
 Submit route previously rejected submissions with no text even when a file was uploaded. Fixed validation to accept a submission as valid if it has either raw text OR a file. File-only submissions now proceed through triage with a fallback prompt: "User submitted a file with no accompanying text. Analyse based on the file type and any available metadata." Image content is not yet read by Claude — that remains a future task (feat/image-triage).
 
 `has_metadata` calculation updated: a file alone counts as metadata, context text is a bonus on top. hashSource for deduplication uses file path when no text is present to avoid all file-only submissions colliding on the same hash.
 
 **Original submission toggle:**
+
 Report detail pages now show a "View original submission" toggle for the report's original submitter and moderators only. Shows:
 
 - Raw text content in a monospace scrollable block (max 300px height)
@@ -871,7 +873,41 @@ File display uses server-generated signed URLs (1 hour expiry) from Supabase Sto
 Signed URL generation is non-fatal — if it fails, file just doesn't display.
 
 **Known issue — raw_content RLS exposure:**
+
 The current RLS policy on reports grants anon SELECT on all columns including raw_content for published reports. UI correctly gates display behind canViewOriginal, but raw_content is reachable via the Supabase REST API directly. Tracked as a GitHub issue for the next hardening pass — fix is to exclude raw_content from the public policy or create a public view without it.
 
 **Ungating the toggle:**
+
 If the decision is made to show original submissions publicly, change `canViewOriginal = isSubmitter || isModerator` to `canViewOriginal = true` in `reports/[id]/page.tsx` and use `createAdminClient()` for all signed URL generation.
+
+---
+
+## 2026-06-23
+
+### Feed pagination, reports page, favicon, footer fix — feat/feed-pagination
+
+**Homepage feed:**
+
+Reduced homepage feed limit from 20 to 6. FeedSection now shows "View all reports →" link below the feed when reports exist. Limit can be increased as submission volume grows.
+
+**All reports page (`/reports`):**
+
+- New server-rendered paginated reports page at `/reports`. 20 per page, server-side pagination via searchParams. Supports type filter (select) and country filter (full-world select using countries-data.json — replaced the original ISO code text input for better UX).
+- Pagination links preserve active filters via URLSearchParams. Nav updated to include Reports link alongside Feed, Leaderboard, For researchers.
+- ReportFilters is a 'use client' component using useSearchParams — wrapped in Suspense boundary in the page to satisfy Next.js App Router requirements.
+
+**Favicon:**
+
+- Custom SVG favicon added at public/favicon.svg — shield-check icon matching the brand green (#085041) with white icon.
+- Referenced in root layout metadata (icon, shortcut, apple). Replaces default Vercel/Next.js favicon.
+
+**Footer:**
+
+- Brand description paragraph updated to `max-w-56` on `md+` only (`md:max-w-56`), allowing full width on mobile as requested.
+
+**Original submission access (updated on this branch):**
+
+- Decision made by Quadri: original submissions visible to all visitors, not just submitter and moderator. `canViewOriginal` changed to true.
+- File signed URLs now always generated via createAdminClient to bypass storage RLS. canDownloadFile prop added to OriginalSubmission — file downloads (non-image) restricted to submitter and moderator.
+- Images shown to all with onContextMenu preventDefault as soft copy deterrent.
+- `raw_content` RLS exposure noted — tracked as GitHub issue for next hardening pass.
