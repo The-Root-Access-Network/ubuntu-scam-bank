@@ -5,11 +5,17 @@ import { z } from 'zod';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { nameToCode } from '@/lib/countries';
 import { uploadSubmissionFile, UploadError } from '@/lib/storage/upload';
-import { triageSubmission, hashContent } from '@/lib/ai/triage';
+import {
+  triageSubmission,
+  triageSubmissionWithImage,
+  hashContent,
+  type ImageMimeType,
+} from '@/lib/ai/triage';
 import { calculatePoints, welcomeBonus } from '@/lib/points/calculate';
 import type { PointsLineItem } from '@/lib/points/calculate';
 
 // ── FormData validation schema ────────────────────────────────────────────────
+
 const SubmitSchema = z.object({
   content: z.string().default(''),
   type: z.enum([
@@ -27,6 +33,14 @@ const SubmitSchema = z.object({
   country: z.string().min(1),
   context: z.string().default(''),
 });
+
+// MIME types that support direct image triage via Claude's vision API.
+// EML, PDF, TXT continue using text-only triage unchanged.
+const IMAGE_TRIAGE_TYPES = new Set<ImageMimeType>([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]);
 
 // ── POST /api/submit ──────────────────────────────────────────────────────────
 
@@ -127,9 +141,6 @@ export async function POST(request: NextRequest) {
   }
 
   // ── 6. Build content string for triage ───────────────────────────────────
-  // If the user uploaded a file with no text, give Claude a minimal prompt
-  // so the triage pipeline has something to work with. Image content
-  // is not yet read directly — that's a future improvement.
   const coreContent = [pastedText.trim(), (fileResult?.text ?? '').trim()]
     .filter(Boolean)
     .join('\n\n');
@@ -138,9 +149,42 @@ export async function POST(request: NextRequest) {
     ? coreContent
     : 'User submitted a file with no accompanying text. Analyse based on the file type and any available metadata.';
 
+  // ── 6a. Fetch image bytes for image triage (JPEG/PNG/WebP only) ───────────
+  // Downloaded immediately after upload so we can pass them to Claude as a
+  // vision content block. Non-fatal — any failure falls back to text-only triage.
+  // Buffer is available in both Vercel (Node.js) and Cloudflare Workers
+  // environments. The project now deploys to both; this path is safe on either.
+  let imageBase64: string | null = null;
+  let imageMimeType: ImageMimeType | null = null;
+
+  if (
+    fileResult &&
+    file &&
+    IMAGE_TRIAGE_TYPES.has(file.type as ImageMimeType)
+  ) {
+    try {
+      const { data: imageBytes, error: downloadError } = await admin.storage
+        .from('scam_reports')
+        .download(fileResult.path);
+
+      if (downloadError || !imageBytes) {
+        console.error(
+          '[submit] Image download for triage failed:',
+          downloadError,
+        );
+        // Fall through to text-only triage
+      } else {
+        const buffer = await imageBytes.arrayBuffer();
+        imageBase64 = Buffer.from(buffer).toString('base64');
+        imageMimeType = file.type as ImageMimeType;
+      }
+    } catch (err) {
+      // Non-fatal — ops will see this in logs; submission continues
+      console.error('[submit] Image fetch for triage failed (non-fatal):', err);
+    }
+  }
+
   // ── 7. Deduplication — hash check ─────────────────────────────────────────
-  // Hash coreContent (not the triage fallback string) so file-only
-  // submissions without text always deduplicate correctly.
   const hashSource = coreContent || `file:${fileResult?.path ?? reportId}`;
   const contentHash = await hashContent(hashSource);
 
@@ -161,7 +205,16 @@ export async function POST(request: NextRequest) {
     .join('\n\n');
 
   // ── 8. AI triage ──────────────────────────────────────────────────────────
-  const triage = await triageSubmission(fullTriageContent);
+  // Image triage: Claude reads the screenshot directly via vision API.
+  // Text triage: used for EML, PDF, TXT, and as fallback when image fetch fails.
+  const triage =
+    imageBase64 && imageMimeType
+      ? await triageSubmissionWithImage(
+          fullTriageContent,
+          imageBase64,
+          imageMimeType,
+        )
+      : await triageSubmission(fullTriageContent);
 
   // ── 9. Check for first-ever submission ────────────────────────────────────
   const { count: submissionCount } = await admin
@@ -172,9 +225,6 @@ export async function POST(request: NextRequest) {
   const isFirstSubmission = (submissionCount ?? 0) === 0;
 
   // ── 10. Calculate points ──────────────────────────────────────────────────
-  // has_metadata: true if a file is present (file-only submissions count),
-  // OR if both a file and written context are present. The file itself
-  // is the metadata — context text is a bonus, not the baseline.
   const hasMetadata = !!(fileResult || context.trim().length > 10);
 
   const pointsResult = calculatePoints(
