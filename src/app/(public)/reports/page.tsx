@@ -7,6 +7,7 @@ import {
   IconChevronLeft,
   IconChevronRight,
 } from '@tabler/icons-react';
+import { Suspense } from 'react';
 import Nav from '@/components/layout/Nav';
 import Container from '@/components/layout/Container';
 import Footer from '@/components/layout/Footer';
@@ -95,7 +96,9 @@ export default async function ReportsPage({
           </div>
 
           {/* Filters — client component */}
-          <ReportFilters currentType={type} currentCountry={country} />
+          <Suspense fallback={null}>
+            <ReportFilters currentType={type} currentCountry={country} />
+          </Suspense>
 
           {/* Report list */}
           <div className='bg-canvas border border-stroke-faint rounded-lg p-5'>
