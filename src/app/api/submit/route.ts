@@ -9,8 +9,8 @@ import {
   triageSubmission,
   triageSubmissionWithImage,
   hashContent,
-  type ImageMimeType,
 } from '@/lib/ai/triage';
+import type { ImageMimeType } from '@/types/triage';
 import { calculatePoints, welcomeBonus } from '@/lib/points/calculate';
 import type { PointsLineItem } from '@/lib/points/calculate';
 
