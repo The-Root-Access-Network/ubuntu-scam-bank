@@ -10,4 +10,5 @@ export type {
   IndicatorType,
   TriageIndicator,
   TriageResult,
+  ImageMimeType,
 } from '@/lib/ai/triage';

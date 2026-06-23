@@ -911,3 +911,36 @@ Reduced homepage feed limit from 20 to 6. FeedSection now shows "View all report
 - File signed URLs now always generated via createAdminClient to bypass storage RLS. canDownloadFile prop added to OriginalSubmission — file downloads (non-image) restricted to submitter and moderator.
 - Images shown to all with onContextMenu preventDefault as soft copy deterrent.
 - `raw_content` RLS exposure noted — tracked as GitHub issue for next hardening pass.
+
+### Image triage via Claude vision API — feature/image-triage
+
+Extended the AI triage pipeline to read uploaded images directly when the submission includes a JPEG, PNG, or WebP file. Other file types (EML, PDF, TXT) continue using text-only triage unchanged.
+
+**triage.ts refactor:**
+
+- Extracted shared `parseAndValidate(raw: string)` function used by both triage paths — eliminates duplication of fence-stripping, field validation, enum checks, and numeric clamping
+- Added `triageSubmissionWithImage(rawContent, imageBase64, mimeType)` — passes image as base64 content block via Claude's vision API alongside any text context the user provided
+- Text prompt adapts: when text is present it's framed as context; when absent, Claude is directed to extract IOCs from the image directly
+- `ImageMimeType` type exported: 'image/jpeg' | 'image/png' | 'image/webp'
+- Both functions share `TRIAGE_SYSTEM_PROMPT` and `FALLBACK_RESULT`
+
+**submit/route.ts:**
+
+- After file upload (Step 5), checks if file is a triageable image type
+- Downloads image bytes from Supabase Storage immediately post-upload
+- Converts ArrayBuffer → base64 via `Buffer.from()` (Node.js global, available on Vercel and Cloudflare Workers via nodejs_compat)
+- Step 8 routes to `triageSubmissionWithImage` if image data available, falls back to `triageSubmission` if download fails (non-fatal)
+- `IMAGE_TRIAGE_TYPES` constant: Set(['image/jpeg', 'image/png', 'image/webp'])
+
+**types/triage.ts:**
+
+- Added ImageMimeType to re-exports so consumer code can import from `@/types` rather than reaching into `@/lib/ai/triage` directly
+
+**AI_TRIAGE.md:**
+
+- Updated to reflect both triage paths, shared `parseAndValidate` logic, image triage workflow, updated deduplication hash source behaviour, and updated cost estimate including vision API token usage
+
+**Error handling:**
+
+- Image download failure is non-fatal — falls back to text-only triage and logs to ops for visibility
+- Submission always stored regardless of triage path or failure

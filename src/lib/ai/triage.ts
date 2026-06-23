@@ -2,24 +2,34 @@
 
 /**
  * AI triage pipeline for UbuntuScamBank.
+ *
  * @param rawContent - The raw text content of the submission to triage.
  * @returns A structured TriageResult with extracted fields and metadata.
  * This module encapsulates all interactions with the Anthropic Claude API, as well as the parsing and validation of its responses. It is designed to be robust against API failures and model hallucinations, returning a safe fallback result when necessary.
  *
- * Workflow:
+ * Exports:
+ *   triageSubmission(rawContent)           — text-only triage
+ *   triageSubmissionWithImage(...)         — image + optional text triage
+ *   hashContent(content)                   — SHA-256 dedup hash
+ *
+ *  It never writes to the database — that is the submit route's responsibility.
+ *
+ * Both triage functions share:
+ *   - The same TRIAGE_SYSTEM_PROMPT
+ *   - The same parseAndValidate() output parser
+ *   - The same FALLBACK_RESULT on any failure
+ *
+ *  * Workflow:
  * 1. Receives raw submission content from the submit route.
  * 2. Calls the Claude API by /api/submit after the dedup hash check with a system prompt and user message containing the content.
  * 3. Parses the response, applying strict validation and defaults for every field.
  * 4. Returns a typed TriageResult that downstream code can rely on without additional checks.
  *
- * It never writes to the database — that is the submit route's responsibility.
- *
  * Error handling:
- * - If the API call fails or returns unparseable JSON, triageSubmission returns a fallback result with triage_failed = true and confidence = 0.
- * - The submit route checks triage_failed and sets report status to 'under_review' for manual moderation in these cases.
+ * Neither function throws. On any failure, triage_failed = true is returned
+ * and the submit route stores the report under_review for manual moderation.
  *
  * This design ensures that triage issues do not block report submissions, while still surfacing problems for ops visibility and manual review.
- *
  */
 
 import Anthropic from '@anthropic-ai/sdk';
@@ -67,6 +77,8 @@ export interface TriageResult {
   triage_failed: boolean; // true if Claude call failed or JSON unparseable
 }
 
+export type ImageMimeType = 'image/jpeg' | 'image/png' | 'image/webp';
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const VALID_SCAM_TYPES = new Set<ScamType>([
@@ -94,7 +106,7 @@ const VALID_INDICATOR_TYPES = new Set<IndicatorType>([
 // Returned whenever Claude is unavailable or returns unparseable output.
 // The submit route checks triage_failed and sets report status accordingly.
 const FALLBACK_RESULT: TriageResult = Object.freeze({
-  type: 'other',
+  type: 'other' as ScamType,
   severity: 1,
   severity_reason: '',
   confidence: 0,
@@ -131,45 +143,10 @@ export async function hashContent(rawContent: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-// ── Main pipeline ─────────────────────────────────────────────────────────────
-
-export async function triageSubmission(
-  rawContent: string,
-): Promise<TriageResult> {
-  try {
-    const client = getClient();
-
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
-      system: TRIAGE_SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: `Analyse this submission:\n\n${rawContent}`,
-        },
-      ],
-    });
-
-    // Extract the text block — Claude may return multiple content blocks
-    const textBlock = message.content.find((b) => b.type === 'text');
-    if (!textBlock || textBlock.type !== 'text') {
-      console.error('[triage] No text block in Claude response');
-      return FALLBACK_RESULT;
-    }
-
-    return parseAndValidate(textBlock.text);
-  } catch (err) {
-    // Log for ops visibility but never propagate — the submit route
-    // falls back to under_review status when triage_failed is true
-    console.error('[triage] Claude API call failed:', err);
-    return FALLBACK_RESULT;
-  }
-}
-
-// ── Parser and validator ──────────────────────────────────────────────────────
-// Applies safe defaults for every field so downstream code never hits
-// undefined. Unknown enum values are coerced to safe fallbacks.
+// ── Shared JSON parser ────────────────────────────────────────────────────────
+// Strips markdown fences Claude sometimes adds despite prompt instructions,
+// then parses and validates every field with safe defaults.
+// Used by both triageSubmission and triageSubmissionWithImage.
 
 function parseAndValidate(raw: string): TriageResult {
   let parsed: Record<string, unknown>;
@@ -183,7 +160,7 @@ function parseAndValidate(raw: string): TriageResult {
     parsed = JSON.parse(cleaned);
   } catch {
     console.error('[triage] JSON parse failed. Raw response:', raw);
-    return FALLBACK_RESULT;
+    return { ...FALLBACK_RESULT };
   }
 
   // ── Type ──────────────────────────────────────────────────────────────────
@@ -205,8 +182,6 @@ function parseAndValidate(raw: string): TriageResult {
     ) / 1000;
 
   // ── Indicators ────────────────────────────────────────────────────────────
-  // Filter out any indicator whose type isn't in the known set,
-  // and any whose value is empty — both indicate a model hallucination.
   const rawIndicators = Array.isArray(parsed.indicators)
     ? parsed.indicators
     : [];
@@ -248,4 +223,95 @@ function parseAndValidate(raw: string): TriageResult {
     pii_found,
     triage_failed: false,
   };
+}
+
+// ── Text-only triage ──────────────────────────────────────────────────────────
+
+export async function triageSubmission(
+  rawContent: string,
+): Promise<TriageResult> {
+  try {
+    const client = getClient();
+
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      system: TRIAGE_SYSTEM_PROMPT,
+      messages: [
+        {
+          role: 'user',
+          content: `Analyse this submission:\n\n${rawContent}`,
+        },
+      ],
+    });
+
+    const textBlock = message.content.find((b) => b.type === 'text');
+    if (!textBlock || textBlock.type !== 'text') {
+      console.error('[triage] No text block in Claude response');
+      return { ...FALLBACK_RESULT };
+    }
+
+    return parseAndValidate(textBlock.text);
+  } catch (err) {
+    console.error('[triage] Claude API call failed:', err);
+    return { ...FALLBACK_RESULT };
+  }
+}
+
+// ── Image triage ──────────────────────────────────────────────────────────────
+// Passes the image as a base64 content block alongside any text.
+// Claude can extract IOCs visible in screenshots — URLs, phone numbers,
+// sender names, domain names, QR codes, etc.
+// Supported types: JPEG, PNG, WebP (Anthropic's vision API constraints).
+
+export async function triageSubmissionWithImage(
+  rawContent: string,
+  imageBase64: string,
+  mimeType: ImageMimeType,
+): Promise<TriageResult> {
+  try {
+    const client = getClient();
+
+    // Text prompt adapts based on whether the user provided accompanying text.
+    // When text is present it's treated as context, not the primary content.
+    const textPrompt = rawContent.trim()
+      ? `Analyse this image submission. The user also provided the following context:\n\n${rawContent.trim()}\n\nExtract all scam indicators visible in the image and in the text above.`
+      : 'Analyse this image submission. Extract all scam indicators visible in the image — URLs, phone numbers, sender names, domain names, QR codes, and any other threat indicators.';
+
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      system: TRIAGE_SYSTEM_PROMPT,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mimeType,
+                data: imageBase64,
+              },
+            },
+            {
+              type: 'text',
+              text: textPrompt,
+            },
+          ],
+        },
+      ],
+    });
+
+    const textBlock = message.content.find((b) => b.type === 'text');
+    if (!textBlock || textBlock.type !== 'text') {
+      console.error('[triage/image] No text block in Claude response');
+      return { ...FALLBACK_RESULT };
+    }
+
+    return parseAndValidate(textBlock.text);
+  } catch (err) {
+    console.error('[triage/image] Claude API call failed:', err);
+    return { ...FALLBACK_RESULT };
+  }
 }
