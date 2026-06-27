@@ -1,11 +1,14 @@
 // src/app/(public)/reports/[id]/page.tsx
 
 /**
- * Report detail page. Displays all information about a single report, including:
+ * Report detail page.
+ *
+ * Displays all information about a single report, including:
  * - Summary and metadata (type, severity, country, AI tags)
  * - Indicators of compromise (grouped by type)
  * - Voting buttons with current counts
  * - View count and submission time
+ * fetched via anon client from public_reports view — raw_content intentionally excluded.
  *
  * Also increments the view count on each page load.
  *
@@ -30,8 +33,6 @@ import VoteButtons from '@/components/reports/VoteButtons';
 import OriginalSubmission from '@/components/reports/OriginalSubmission';
 import type { Metadata } from 'next';
 
-// ── Static display maps ───────────────────────────────────────────────────────
-
 const SEVERITY_COLORS: Record<number, string> = {
   1: '#C0DD97',
   2: '#EF9F27',
@@ -50,16 +51,45 @@ const INDICATOR_LABELS: Record<string, string> = {
   file_hash: 'File hash',
 };
 
-// ── Data fetching ─────────────────────────────────────────────────────────────
-
-async function getReport(id: string) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
   const supabase = await createClient();
 
+  const { data } = await supabase
+    .from('public_reports')
+    .select('type, summary')
+    .eq('id', id)
+    .eq('status', 'published')
+    .single();
+
+  if (!data) return { title: 'Report not found' };
+
+  // type is nullable from the view — guard before indexing
+  const meta = TYPE_META[data.type ?? 'other'] ?? TYPE_META.other;
+  return {
+    title: `${meta.label} report`,
+    description: data.summary?.slice(0, 155) ?? undefined,
+  };
+}
+
+export default async function ReportPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  // ── 1. Fetch public report data (no raw_content) ──────────────────────────
   const [reportResult, indicatorsResult] = await Promise.all([
     supabase
-      .from('reports')
+      .from('public_reports')
       .select(
-        'id, type, severity, country_code, summary, ai_tags, ai_confidence, confirm_count, dispute_count, view_count, is_novel, submitted_at, submitted_by, raw_content, file_path, file_type',
+        'id, type, severity, country_code, summary, ai_tags, ai_confidence, confirm_count, dispute_count, view_count, is_novel, submitted_at, submitted_by, file_path, file_type',
       )
       .eq('id', id)
       .eq('status', 'published')
@@ -71,65 +101,19 @@ async function getReport(id: string) {
       .order('type'),
   ]);
 
-  if (!reportResult.data) return null;
+  if (!reportResult.data) notFound();
 
-  return {
-    report: reportResult.data,
-    indicators: indicatorsResult.data ?? [],
-  };
-}
+  const report = reportResult.data;
+  const indicators = indicatorsResult.data ?? [];
 
-// ── Metadata ──────────────────────────────────────────────────────────────────
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
-  const { id } = await params;
-  const supabase = await createClient();
-
-  const { data } = await supabase
-    .from('reports')
-    .select('type, summary')
-    .eq('id', id)
-    .eq('status', 'published')
-    .single();
-
-  if (!data) return { title: 'Report not found' };
-
-  const meta = TYPE_META[data.type] ?? TYPE_META.other;
-  return {
-    title: `${meta.label} report`,
-    description: data.summary?.slice(0, 155) ?? undefined,
-  };
-}
-
-// ── Page ──────────────────────────────────────────────────────────────────────
-
-export default async function ReportPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const data = await getReport(id);
-
-  if (!data) notFound();
-
-  const { report, indicators } = data;
-
-  // ── Auth check ────────────────────────────────────────────────────────────
-  // Determine if the current user can view the original submission.
-  // Eligibility: the submitter themselves, or any moderator.
-  const authClient = await createClient();
+  // ── 2. Auth check ─────────────────────────────────────────────────────────
   const {
     data: { user },
-  } = await authClient.auth.getUser();
+  } = await supabase.auth.getUser();
 
   let isModerator = false;
   if (user) {
-    const { data: profile } = await authClient
+    const { data: profile } = await supabase
       .from('users')
       .select('is_moderator')
       .eq('id', user.id)
@@ -140,49 +124,69 @@ export default async function ReportPage({
   const isSubmitter = !!user && user.id === report.submitted_by;
   const isOwnReport = isSubmitter;
   const isSignedIn = !!user;
-  // const canViewOriginal = isSubmitter || isModerator;
 
-  // Public access changes
+  // Original submission visible to everyone per founder decision.
+  // File downloads restricted to submitter and moderators only.
   const canViewOriginal = true;
   const canDownloadFile = isSubmitter || isModerator;
 
-  // ── Signed URL for file ───────────────────────────────────────────────────
-  // Always generated via admin client because public/anonymous users lack 
-  // storage RLS access rules to read files from this bucket directly.
+  // ── 3. Fetch raw_content via admin client (always — visible to all) ───────
+  // raw_content is excluded from public_reports view.
+  // Admin client reads from the base table directly.
+  let rawContent: string | null = null;
+  try {
+    const adminForContent = createAdminClient();
+    const { data: rawData } = await adminForContent
+      .from('reports')
+      .select('raw_content')
+      .eq('id', id)
+      .single();
+    rawContent = rawData?.raw_content ?? null;
+  } catch (err) {
+    console.error('[report-detail] raw_content fetch failed:', err);
+    // Non-fatal — OriginalSubmission renders without text content
+  }
+
+  // ── 4. Signed URL for file ────────────────────────────────────────────────
+  // Always generated via admin client since the view is public but
+  // storage bucket is private. Admin client bypasses storage RLS.
   let fileSignedUrl: string | null = null;
   if (report.file_path) {
     try {
       const adminForStorage = createAdminClient();
       const { data: urlData } = await adminForStorage.storage
         .from('scam_reports')
-        .createSignedUrl(report.file_path, 3600); // 1 hour
+        .createSignedUrl(report.file_path, 3600);
       fileSignedUrl = urlData?.signedUrl ?? null;
     } catch (err) {
       console.error('[report-detail] signed URL generation failed:', err);
     }
   }
 
-  // ── Increment view count ──────────────────────────────────────────────────
+  // ── 5. Increment view count ───────────────────────────────────────────────
   try {
     const admin = createAdminClient();
     await admin
       .from('reports')
       .update({ view_count: (report.view_count ?? 0) + 1 })
-      .eq('id', report.id);
+      .eq('id', report.id ?? '');
   } catch (err) {
     console.error('[report-detail] view_count update failed:', err);
   }
 
-  // ── Group indicators by type ──────────────────────────────────────────────
+  // ── 6. Group indicators ───────────────────────────────────────────────────
   const grouped = indicators.reduce<Record<string, string[]>>((acc, ind) => {
     if (!acc[ind.type]) acc[ind.type] = [];
     acc[ind.type].push(ind.value);
     return acc;
   }, {});
 
-  const meta = TYPE_META[report.type] ?? TYPE_META.other;
-  const severityLabel = SEVERITY_LABELS[report.severity] ?? '—';
-  const severityColor = SEVERITY_COLORS[report.severity] ?? '#C8C7C2';
+  // Null guards for view nullable fields
+  const reportType = report.type ?? 'other';
+  const reportSeverity = report.severity ?? 1;
+  const meta = TYPE_META[reportType] ?? TYPE_META.other;
+  const severityLabel = SEVERITY_LABELS[reportSeverity] ?? '—';
+  const severityColor = SEVERITY_COLORS[reportSeverity] ?? '#C8C7C2';
 
   return (
     <div className='min-h-dvh bg-canvas-subtle'>
@@ -200,14 +204,13 @@ export default async function ReportPage({
           </Link>
 
           <div className='bg-canvas border border-stroke-faint rounded-lg p-5 md:p-7'>
-            {/* ── Header row ─────────────────────────────────────────────── */}
+            {/* Header */}
             <div className='flex flex-wrap items-center gap-2.5 mb-5'>
               <span
                 className={`text-[12px] font-medium px-2.5 py-1 rounded-full ${meta.classes}`}
               >
                 {meta.label}
               </span>
-
               <div className='flex items-center gap-1.5'>
                 <div
                   className='w-2.5 h-2.5 rounded-full shrink-0'
@@ -218,7 +221,6 @@ export default async function ReportPage({
                   {severityLabel} severity
                 </span>
               </div>
-
               {report.is_novel && (
                 <span className='text-[12px] font-medium px-2.5 py-1 rounded-full bg-warning-bg text-warning-text'>
                   Novel campaign
@@ -231,7 +233,7 @@ export default async function ReportPage({
               {report.summary ?? 'No summary available for this report.'}
             </p>
 
-            {/* ── Indicators of compromise ───────────────────────────────── */}
+            {/* Indicators */}
             {Object.keys(grouped).length > 0 && (
               <div className='mb-6'>
                 <div className='flex items-center gap-1.5 mb-3'>
@@ -287,7 +289,7 @@ export default async function ReportPage({
 
             {/* ── Original submission ── */}
             <OriginalSubmission
-              rawContent={report.raw_content}
+              rawContent={rawContent}
               fileSignedUrl={fileSignedUrl}
               fileType={report.file_type}
               canViewOriginal={canViewOriginal}
@@ -296,9 +298,9 @@ export default async function ReportPage({
 
             {/* ── Voting ─────────────────────────────────────────────────── */}
             <VoteButtons
-              reportId={report.id}
-              confirmCount={report.confirm_count}
-              disputeCount={report.dispute_count}
+              reportId={report.id ?? ''}
+              confirmCount={report.confirm_count ?? 0}
+              disputeCount={report.dispute_count ?? 0}
               isOwnReport={isOwnReport}
               isSignedIn={isSignedIn}
             />
@@ -311,16 +313,17 @@ export default async function ReportPage({
               </span>
               <span className='flex items-center gap-1'>
                 <IconCheck size={13} aria-hidden='true' />
-                {report.confirm_count} confirmed
+                {report.confirm_count ?? 0} confirmed
               </span>
               {report.country_code && <span>{report.country_code}</span>}
               {report.ai_confidence != null && (
                 <span>
-                  AI confidence: {Math.round(report.ai_confidence * 100)}%
+                  AI confidence: {Math.round((report.ai_confidence ?? 0) * 100)}
+                  %
                 </span>
               )}
               <span className='md:ml-auto'>
-                {relativeTime(report.submitted_at)}
+                {relativeTime(report.submitted_at ?? '')}
               </span>
             </div>
           </div>
