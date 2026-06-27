@@ -6,6 +6,7 @@
  * Four stat cards fetched in parallel via admin client.
  */
 
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import type { Metadata } from 'next';
@@ -18,13 +19,20 @@ function StatCard({
   label,
   value,
   sub,
+  className,
 }: {
   label: string;
   value: number;
   sub?: string;
+  className?: string;
 }) {
   return (
-    <div className='bg-canvas border border-stroke-faint rounded-lg p-5'>
+    <div
+      className={[
+        'bg-canvas border border-stroke-faint rounded-lg p-5',
+        className ?? '',
+      ].join(' ')}
+    >
       <p className='text-caption text-fg-muted uppercase tracking-label mb-2'>
         {label}
       </p>
@@ -81,7 +89,7 @@ export default async function OpsOverviewPage() {
     admin
       .from('reports')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending'),
+      .in('status', ['pending', 'under_review']),
   ]);
 
   return (
@@ -94,22 +102,38 @@ export default async function OpsOverviewPage() {
       </div>
 
       <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3'>
-        <StatCard label='Registered users' value={usersCount.count ?? 0} />
-        <StatCard
-          label='Pending applications'
-          value={pendingAppsCount.count ?? 0}
-          sub='Researcher API requests awaiting review'
-        />
-        <StatCard
-          label='Published reports'
-          value={publishedReportsCount.count ?? 0}
-          sub='Verified scam reports available to the public'
-        />
-        <StatCard
-          label='Reports pending moderation'
-          value={pendingReportsCount.count ?? 0}
-          sub='Triage failures queued for manual review'
-        />
+        <Link href='/ops/users' className='block'>
+          <StatCard
+            label='Registered users'
+            value={usersCount.count ?? 0}
+            className='hover:border-brand transition-colors duration-150 cursor-pointer h-full'
+          />
+        </Link>
+        <Link href='/ops/applications' className='block'>
+          <StatCard
+            label='Pending applications'
+            value={pendingAppsCount.count ?? 0}
+            sub='Researcher API requests awaiting review'
+            className='hover:border-brand transition-colors duration-150 cursor-pointer h-full'
+          />
+        </Link>
+        <Link href='/reports' className='block'>
+          <StatCard
+            label='Published reports'
+            value={publishedReportsCount.count ?? 0}
+            sub='Verified scam reports available to the public'
+            className='hover:border-brand transition-colors duration-150 cursor-pointer h-full'
+          />
+        </Link>
+        {/* Clickable — links to moderation queue */}
+        <Link href='/ops/reports' className='block'>
+          <StatCard
+            label='Reports pending moderation'
+            value={pendingReportsCount.count ?? 0}
+            sub='Triage failures queued for manual review'
+            className='hover:border-brand transition-colors duration-150 cursor-pointer h-full'
+          />
+        </Link>
       </div>
     </div>
   );
