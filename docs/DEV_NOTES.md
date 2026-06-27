@@ -944,3 +944,55 @@ Extended the AI triage pipeline to read uploaded images directly when the submis
 
 - Image download failure is non-fatal — falls back to text-only triage and logs to ops for visibility
 - Submission always stored regardless of triage path or failure
+
+---
+
+## 2026-06-27
+
+### raw_content RLS fix and ops moderation queue — feat/ops-moderation-queue
+
+**RLS fix — public_reports view:**
+
+- Created `public_reports` view excluding raw_content from public access.
+- Same pattern as `leaderboard_users`. Revoked anon SELECT on reports table directly. Updated indicators RLS policy to subquery `public_reports` instead of reports (required because the existing policy used an exists() subquery — after revoking anon access to reports, that subquery would fail and break IOC display on report detail pages).
+
+  - All three curl verifications passed:
+
+    - `/rest/v1/reports` → permission denied ✅
+    - `/rest/v1/public_reports` → safe columns only ✅
+    - `/rest/v1/indicators` → returns correctly for published reports ✅
+
+  - Application code updated to query `public_reports` wherever anon/session client was used on the reports table:
+
+    - `src/app/(public)/page.tsx` — feed count, country count, feed query
+    - `src/app/(public)/reports/page.tsx` — paginated reports list
+    - `src/app/(public)/reports/[id]/page.tsx` — report detail, generateMetadata
+
+- `raw_content` now fetched separately via `createAdminClient()` on the report detail page — always (`canViewOriginal = true` per founder decision).
+- File signed URLs always generated via admin client since storage bucket is private but original submissions are now public.
+- View columns are nullable (Supabase type generator limitation) — null guards added at all usage sites via ?? coalescing with sensible defaults.
+
+**Ops moderation queue (/ops/reports):**
+
+- New page showing all reports with status 'pending' or 'under_review', ordered oldest-first (FIFO review queue).
+- Each card shows type, severity, country, triage status badge, AI confidence, raw content preview (200 chars), and publish/reject actions via modal confirmation.
+
+  - Triage status badge logic:
+
+    - `under_review` + `ai_confidence null` → "Triage failed" (danger)
+    - `under_review` + `ai_confidence present` → "Flagged for review" (warning)
+    - `pending` → "Pending" (neutral)
+
+- API routes: POST `/api/ops/reports/[id]/publish` and `/reject`. Both use `requireModerator()` guard and admin client.
+- Publish sets `status=published`, `published_at`, `moderated_by`, `moderated_at`.
+- Reject sets `status=rejected`, `moderated_by`, `moderated_at`.
+
+- Ops overview stat cards are now all clickable Links — users, applications, published reports, and pending moderation queue each link to their
+respective pages.
+- Reports nav link added to ops sidebar.
+
+- Updated pending reports count query to use `.in('status', ['pending', 'under_review'])` to match what the queue page actually shows.
+
+**Auth modal:**
+
+Replaced Tabler `IconBrandGoogle` with official Google brand SVG for accurate brand representation.
