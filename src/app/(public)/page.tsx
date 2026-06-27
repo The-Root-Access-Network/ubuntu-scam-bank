@@ -44,20 +44,22 @@ async function getPageData() {
     profileResult,
     countryPointsResult,
   ] = await Promise.all([
+    // Count via public_reports — anon can no longer read reports directly
     supabase
-      .from('reports')
+      .from('public_reports')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'published'),
     supabase
       .from('leaderboard_users')
       .select('*', { count: 'exact', head: true }),
     supabase
-      .from('reports')
+      .from('public_reports')
       .select('country_code')
       .eq('status', 'published')
       .not('country_code', 'is', null),
+    // Feed via public_reports
     supabase
-      .from('reports')
+      .from('public_reports')
       .select(
         'id, type, severity, country_code, summary, confirm_count, view_count, submitted_at',
       )
@@ -107,7 +109,16 @@ async function getPageData() {
       users: usersCount.count ?? 0,
       countries: uniqueCountries,
     },
-    feedReports: feedResult.data ?? [],
+    feedReports: (feedResult.data ?? []).map((r) => ({
+      id: r.id ?? '',
+      type: r.type ?? 'other',
+      severity: r.severity ?? 1,
+      country_code: r.country_code,
+      summary: r.summary,
+      confirm_count: r.confirm_count ?? 0,
+      view_count: r.view_count ?? 0,
+      submitted_at: r.submitted_at ?? new Date().toISOString(),
+    })),
     topUsers: leaderboardResult.data ?? [],
     currentUser: profileResult.data ?? null,
     topCountries,

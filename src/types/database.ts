@@ -152,6 +152,13 @@ export type Database = {
             foreignKeyName: "indicators_report_id_fkey"
             columns: ["report_id"]
             isOneToOne: false
+            referencedRelation: "public_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indicators_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
             referencedRelation: "reports"
             referencedColumns: ["id"]
           },
@@ -414,6 +421,13 @@ export type Database = {
             foreignKeyName: "submissions_report_id_fkey"
             columns: ["report_id"]
             isOneToOne: false
+            referencedRelation: "public_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
             referencedRelation: "reports"
             referencedColumns: ["id"]
           },
@@ -502,6 +516,13 @@ export type Database = {
             foreignKeyName: "votes_report_id_fkey"
             columns: ["report_id"]
             isOneToOne: false
+            referencedRelation: "public_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
             referencedRelation: "reports"
             referencedColumns: ["id"]
           },
@@ -549,6 +570,117 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      public_reports: {
+        Row: {
+          ai_category: string | null
+          ai_confidence: number | null
+          ai_tags: string[] | null
+          campaign_id: string | null
+          confirm_count: number | null
+          content_hash: string | null
+          country_code: string | null
+          dispute_count: number | null
+          file_path: string | null
+          file_type: string | null
+          id: string | null
+          is_novel: boolean | null
+          moderated_at: string | null
+          moderated_by: string | null
+          published_at: string | null
+          severity: number | null
+          status: string | null
+          submitted_at: string | null
+          submitted_by: string | null
+          summary: string | null
+          type: string | null
+          view_count: number | null
+        }
+        Insert: {
+          ai_category?: string | null
+          ai_confidence?: number | null
+          ai_tags?: string[] | null
+          campaign_id?: string | null
+          confirm_count?: number | null
+          content_hash?: string | null
+          country_code?: string | null
+          dispute_count?: number | null
+          file_path?: string | null
+          file_type?: string | null
+          id?: string | null
+          is_novel?: boolean | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          published_at?: string | null
+          severity?: number | null
+          status?: string | null
+          submitted_at?: string | null
+          submitted_by?: string | null
+          summary?: string | null
+          type?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          ai_category?: string | null
+          ai_confidence?: number | null
+          ai_tags?: string[] | null
+          campaign_id?: string | null
+          confirm_count?: number | null
+          content_hash?: string | null
+          country_code?: string | null
+          dispute_count?: number | null
+          file_path?: string | null
+          file_type?: string | null
+          id?: string | null
+          is_novel?: boolean | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          published_at?: string | null
+          severity?: number | null
+          status?: string | null
+          submitted_at?: string | null
+          submitted_by?: string | null
+          summary?: string | null
+          type?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_moderated_by_fkey"
+            columns: ["moderated_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_moderated_by_fkey"
+            columns: ["moderated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {

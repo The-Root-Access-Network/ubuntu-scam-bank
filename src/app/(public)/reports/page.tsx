@@ -40,7 +40,7 @@ async function getReports(page: number, type: string, country: string) {
   const supabase = await createClient();
 
   let query = supabase
-    .from('reports')
+    .from('public_reports')
     .select(
       'id, type, severity, country_code, summary, confirm_count, view_count, submitted_at',
       { count: 'exact' },
@@ -59,7 +59,19 @@ async function getReports(page: number, type: string, country: string) {
     return { reports: [], total: 0 };
   }
 
-  return { reports: (data ?? []) as FeedReport[], total: count ?? 0 };
+  return {
+    reports: (data ?? []).map((r) => ({
+      id: r.id ?? '',
+      type: r.type ?? 'other',
+      severity: r.severity ?? 1,
+      country_code: r.country_code,
+      summary: r.summary,
+      confirm_count: r.confirm_count ?? 0,
+      view_count: r.view_count ?? 0,
+      submitted_at: r.submitted_at ?? new Date().toISOString(),
+    })) as FeedReport[],
+    total: count ?? 0,
+  };
 }
 
 export default async function ReportsPage({
@@ -95,7 +107,7 @@ export default async function ReportsPage({
             </p>
           </div>
 
-          {/* Filters — client component */}
+          {/* Filters — client component, needs Suspense for useSearchParams */}
           <Suspense fallback={null}>
             <ReportFilters currentType={type} currentCountry={country} />
           </Suspense>

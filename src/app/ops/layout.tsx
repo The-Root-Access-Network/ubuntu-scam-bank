@@ -17,6 +17,7 @@ import {
   IconUsers,
   IconFileText,
   IconLayoutDashboard,
+  IconClipboardList,
 } from '@tabler/icons-react';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import type { Metadata } from 'next';
@@ -32,6 +33,12 @@ const NAV_LINKS = [
     href: '/ops/applications',
     label: 'Applications',
     icon: IconFileText,
+    exact: false,
+  },
+  {
+    href: '/ops/reports',
+    label: 'Reports',
+    icon: IconClipboardList,
     exact: false,
   },
 ];
