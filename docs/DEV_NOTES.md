@@ -955,15 +955,12 @@ Extended the AI triage pipeline to read uploaded images directly when the submis
 
 - Created `public_reports` view excluding raw_content from public access.
 - Same pattern as `leaderboard_users`. Revoked anon SELECT on reports table directly. Updated indicators RLS policy to subquery `public_reports` instead of reports (required because the existing policy used an exists() subquery — after revoking anon access to reports, that subquery would fail and break IOC display on report detail pages).
-
   - All three curl verifications passed:
-
     - `/rest/v1/reports` → permission denied ✅
     - `/rest/v1/public_reports` → safe columns only ✅
     - `/rest/v1/indicators` → returns correctly for published reports ✅
 
   - Application code updated to query `public_reports` wherever anon/session client was used on the reports table:
-
     - `src/app/(public)/page.tsx` — feed count, country count, feed query
     - `src/app/(public)/reports/page.tsx` — paginated reports list
     - `src/app/(public)/reports/[id]/page.tsx` — report detail, generateMetadata
@@ -976,9 +973,7 @@ Extended the AI triage pipeline to read uploaded images directly when the submis
 
 - New page showing all reports with status 'pending' or 'under_review', ordered oldest-first (FIFO review queue).
 - Each card shows type, severity, country, triage status badge, AI confidence, raw content preview (200 chars), and publish/reject actions via modal confirmation.
-
   - Triage status badge logic:
-
     - `under_review` + `ai_confidence null` → "Triage failed" (danger)
     - `under_review` + `ai_confidence present` → "Flagged for review" (warning)
     - `pending` → "Pending" (neutral)
@@ -988,7 +983,7 @@ Extended the AI triage pipeline to read uploaded images directly when the submis
 - Reject sets `status=rejected`, `moderated_by`, `moderated_at`.
 
 - Ops overview stat cards are now all clickable Links — users, applications, published reports, and pending moderation queue each link to their
-respective pages.
+  respective pages.
 - Reports nav link added to ops sidebar.
 
 - Updated pending reports count query to use `.in('status', ['pending', 'under_review'])` to match what the queue page actually shows.
@@ -996,3 +991,47 @@ respective pages.
 **Auth modal:**
 
 Replaced Tabler `IconBrandGoogle` with official Google brand SVG for accurate brand representation.
+
+---
+
+## 2026-06-28
+
+### Email digest infrastructure — feat/email-digest
+
+**Resend Audience setup:**
+
+- Created UbuntuScamBank Users audience in Resend dashboard. Existing users imported via CSV export from Supabase (fields: `email`, `username`, `display_name`, `country_code`, `points`, `badge` — `id`, `is_moderator`, `is_researcher`, `bio` excluded as not needed for contact personalisation).
+- `RESEND_AUDIENCE_ID` added to Vercel environment variables.
+
+**New user audience sync:**
+
+- `src/lib/email/audience.ts` — `addToDigestAudience()` utility. Calls Resend Contacts API to add new users to the audience on registration.
+- Gated on `RESEND_API_KEY` and `RESEND_AUDIENCE_ID`. Non-fatal — never blocks registration. Resend handles duplicates gracefully (updates existing contact rather than creating duplicate).
+
+- `src/app/auth/callback/route.ts` — updated to capture `exchangeCodeForSession` return value and call `addToDigestAudience()` fire-and-forget after successful session establishment.
+- `firstName` derived from Google `user_metadata` (`full_name` or `name`) with email prefix as fallback.
+
+**Digest preview endpoint:**
+
+- GET `/api/digest/preview` — moderator-only. Accepts `?days=N` (default 14).
+- Returns top 5 confirmed reports, community stats (reports published, confirms cast, new users, active countries) for the period.
+
+**Ops digest page (`/ops/digest`):**
+
+- Server component showing fortnightly digest data in readable format.
+- Stats grid, top reports with type/severity/country/confirm count, report links, and step-by-step instructions for sending via Resend Broadcasts.
+- Date calculation uses `setDate()` to avoid `Date.now()` impurity warning in strict mode.
+
+**Digest workflow (hybrid — manual send, automated data):**
+
+- Admin visits `/ops/digest` → sees period stats and top reports → opens Resend Broadcasts → uses saved template → updates dynamic content from ops page → sends to UbuntuScamBank Users audience.
+- Template built once in Resend visual editor, reused each fortnight.
+- Personalised rank line removed from digest format — broadcasts are one-to-many; use community top contributor recognition instead.
+
+**Automation path (future):**
+
+- Vercel Cron Job (vercel.json) calling POST `/api/digest/send` on a schedule, or external cron service. Not implemented yet — hybrid approach preferred until submission volume justifies automation and content quality is consistent.
+
+**Display name fallback:**
+
+Resend template should use `{{ first_name | default: "there" }}` to handle contacts with missing or placeholder display names.
