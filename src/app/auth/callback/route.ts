@@ -3,10 +3,14 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
+import { addToDigestAudience } from '@/lib/email/audience';
 
 // Handles the OAuth redirect from Google (and the magic link redirect for
 // email sign-ups). Exchanges the one-time code for a Supabase session,
 // then redirects back to the homepage.
+//
+// After a successful exchange, adds the user to the Resend digest audience.
+// This is fire-and-forget — audience sync failure never blocks the redirect.
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
@@ -32,7 +36,21 @@ export async function GET(request: NextRequest) {
       },
     );
 
-    await supabase.auth.exchangeCodeForSession(code);
+    const { data } = await supabase.auth.exchangeCodeForSession(code);
+
+    // Add to digest audience — non-fatal, fire and forget.
+    // Runs after session is established so user.email is available.
+    // Resend handles duplicate contacts gracefully (updates, not duplicates).
+    if (data?.user?.email) {
+      const firstName =
+        data.user.user_metadata?.full_name?.split(' ')[0] ??
+        data.user.user_metadata?.name?.split(' ')[0] ??
+        data.user.email.split('@')[0];
+
+      addToDigestAudience(data.user.email, firstName).catch((err) =>
+        console.error('[callback] audience sync error:', err),
+      );
+    }
   }
 
   // Always redirect home — errors surface as "not signed in" state,
