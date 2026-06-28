@@ -18,6 +18,7 @@ import {
   IconFileText,
   IconLayoutDashboard,
   IconClipboardList,
+  IconMail,
 } from '@tabler/icons-react';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import type { Metadata } from 'next';
@@ -41,6 +42,7 @@ const NAV_LINKS = [
     icon: IconClipboardList,
     exact: false,
   },
+  { href: '/ops/digest', label: 'Digest', icon: IconMail, exact: false },
 ];
 
 export default async function OpsLayout({
