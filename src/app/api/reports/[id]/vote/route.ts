@@ -13,6 +13,10 @@
  * 5. Inserts a new row into the 'votes' table with the user's vote.
  *    - The (report_id, user_id) combination is unique, preventing duplicate votes.
  *    - A database trigger updates the report's confirm_count or dispute_count accordingly.
+ * 6. After a successful confirm vote, checks whether the report's confirm_count
+ * has crossed a multiple-of-3 threshold and awards VOTE_CONFIRM bonus points
+ * to the original submitter. This check is non-fatal — a points failure never
+ * surfaces to the voter.
  *
  * Returns a JSON response indicating success or failure, along with appropriate error messages and HTTP status codes.
  */
