@@ -2,7 +2,7 @@
 
 ## PostgreSQL via Supabase
 
-> **Living document** — this reflects the current best understanding of the project as of the initial brainstorming phase. Decisions, structures, and specs here are subject to change as development progresses. Update this file when anything meaningfully changes.
+> **Living document** — updated to reflect current implementation as of v0.9.4.
 >
 > ---
 
@@ -10,16 +10,25 @@
 
 ## Tables Overview
 
-| Table           | Purpose                                                        |
-| --------------- | -------------------------------------------------------------- |
-| `users`         | Registered accounts — points, badges, roles                    |
-| `campaigns`     | Clusters of related scam reports                               |
-| `reports`       | Core table — every submitted scam                              |
-| `indicators`    | IOCs extracted per report (domains, IPs, emails, phones, URLs) |
-| `submissions`   | Links a user to a report, tracks points awarded                |
-| `votes`         | Community confirm/dispute votes on reports                     |
-| `points_ledger` | Full audit trail of every point event                          |
-| `api_keys`      | Researcher API keys                                            |
+| Table                     | Purpose                                                        |
+| ------------------------- | -------------------------------------------------------------- |
+| `users`                   | Registered accounts — points, badges, roles                    |
+| `campaigns`               | Clusters of related scam reports                               |
+| `reports`                 | Core table — every submitted scam                              |
+| `indicators`              | IOCs extracted per report (domains, IPs, emails, phones, URLs) |
+| `submissions`             | Links a user to a report, tracks points awarded                |
+| `votes`                   | Community confirm/dispute votes on reports                     |
+| `points_ledger`           | Full audit trail of every point event                          |
+| `api_keys`                | Researcher API keys                                            |
+| `researcher_applications` | API access applications awaiting review                        |
+| `feedback`                | Contact form submissions from the /feedback page               |
+
+## Views Overview
+
+| View                | Purpose                                                                |
+| ------------------- | ---------------------------------------------------------------------- |
+| `leaderboard_users` | Safe public subset of users (no email) — anon SELECT granted           |
+| `public_reports`    | Safe public subset of reports (no `raw_content`) — anon SELECT granted |
 
 ---
 
@@ -160,7 +169,59 @@ create table api_keys (
   created_at      timestamptz not null default now(),
   revoked_at      timestamptz
 );
+
+-- FEEDBACK (contact form submissions — no public RLS policies)
+create table feedback (
+  id           uuid primary key default gen_random_uuid(),
+  name         text not null,
+  email        text not null,
+  role         text not null,
+  organisation text,
+  message      text not null,
+  created_at   timestamptz not null default now()
+);
 ```
+
+---
+
+## Views
+
+### `leaderboard_users`
+
+Safe public read-only view of `users`. Excludes `email`, `bio`, `is_moderator`, `is_researcher`. Created in `fix/email-exposure` to prevent anon REST API access to raw user data.
+
+```sql
+create or replace view public.leaderboard_users
+with (security_invoker = false)
+as
+  select id, username, display_name, points, badge, country_code
+  from public.users;
+
+grant select on public.leaderboard_users to anon, authenticated;
+revoke select on public.users from anon;
+alter view public.leaderboard_users owner to postgres;
+```
+
+### `public_reports`
+
+Safe public read-only view of `reports`. Excludes `raw_content` (may contain victim PII not fully stripped). Created in `feat/ops-moderation-queue` to close RLS exposure. All public-facing queries use this view via the anon/session client; ops routes and the submit route continue to use the base table via admin client.
+
+```sql
+create or replace view public.public_reports as
+  select
+    id, campaign_id, submitted_by, type, severity, status, country_code,
+    summary, content_hash, ai_category, ai_confidence, ai_tags,
+    file_path, file_type, is_novel, view_count, confirm_count,
+    dispute_count, submitted_at, published_at, moderated_by, moderated_at
+  from public.reports;
+  -- raw_content intentionally excluded
+
+grant select on public.public_reports to anon, authenticated;
+revoke select on public.reports from anon;
+alter view public.public_reports owner to postgres;
+```
+
+**Note on view column nullability:** Supabase's type generator marks all view columns as nullable regardless of the underlying column constraints. Null guards (`?? ''`, `?? 0`, `?? 'other'`) are required at all usage sites in application code.
 
 ---
 
@@ -176,6 +237,7 @@ create index on indicators (report_id);
 create index on indicators (type, value);
 create index on votes (report_id);
 create index on points_ledger (user_id, created_at desc);
+create index on feedback (created_at desc);
 ```
 
 ---
@@ -184,41 +246,64 @@ create index on points_ledger (user_id, created_at desc);
 
 ### reports
 
-- `"Published reports are publicly readable"` — `using (status = 'published')`
+Direct anon SELECT revoked. All public queries go through `public_reports` view.
+Admin client (service role) reads the base table directly for ops routes and raw_content access.
+
+### public_reports (view)
+
+- anon and authenticated SELECT granted via `GRANT SELECT ON public.public_reports`
 
 ### indicators
 
-- `"Indicators for published reports are publicly readable"` — exists()
-  subquery checking reports.status = 'published'
+- `"Indicators for published reports are publicly readable"` — subqueries `public_reports` (not `reports` directly, since anon SELECT on `reports` was revoked):
+
+```sql
+create policy "Indicators for published reports are publicly readable"
+on public.indicators for select
+using (
+  exists (
+    select 1 from public.public_reports
+    where public_reports.id = indicators.report_id
+      and public_reports.status = 'published'
+  )
+);
+```
 
 ### votes
 
-- INSERT: `"Authenticated users can vote on published reports"` —
-  auth.uid() = user_id, report must be published
+- INSERT: `"Authenticated users can vote on published reports"` — auth.uid() = user_id, report must be published
 - SELECT: `"Votes are publicly readable"` — using (true)
 
 ### users
 
-- SELECT: `"Leaderboard fields are publicly readable"` — using (true)
+Direct anon SELECT revoked. All leaderboard/public queries go through `leaderboard_users` view.
+
 - UPDATE: `"Users can update own profile"` — auth.uid() = id
+- Authenticated SELECT on own row still works via RLS
+
+### leaderboard_users (view)
+
+- anon and authenticated SELECT granted via `GRANT SELECT ON public.leaderboard_users`
 
 ### api_keys
 
-- RLS enabled, policy: `"Users can read their own API keys"` —
-  auth.uid() = user_id
+- RLS enabled, policy: `"Users can read their own API keys"` — auth.uid() = user_id
 
 ### researcher_applications
 
-- INSERT: `"Authenticated users can submit applications"` —
-  auth.uid() = user_id
-- SELECT: `"Users can read their own applications"` —
-  auth.uid() = user_id
+- INSERT: `"Authenticated users can submit applications"` — auth.uid() = user_id
+- SELECT: `"Users can read their own applications"` — auth.uid() = user_id
 
-### storage.objects (scam_reports bucket)
+### feedback
+
+- RLS enabled, no public policies. All reads and writes go through admin client (service role).
+
+### storage.objects (scam-reports bucket)
 
 - INSERT: users can upload to their own folder only
 - SELECT: users can read their own files
 - DELETE: users can delete their own files
+- Moderators use `createAdminClient()` to generate signed URLs for any file, bypassing storage RLS
 
 ---
 
@@ -226,8 +311,12 @@ create index on points_ledger (user_id, created_at desc);
 
 ### Get Monthly Leaderboard
 
+Accepts an optional `target_month` date parameter (defaults to current month). Added in `feature/sidebar-leaderboard-dynamic`.
+
 ```sql
-create or replace function get_monthly_leaderboard()
+create or replace function get_monthly_leaderboard(
+  target_month date default date_trunc('month', now())::date
+)
 returns table (
   id            uuid,
   username      text,
@@ -249,35 +338,33 @@ as $$
     coalesce(sum(pl.delta) filter (where pl.delta > 0), 0)::bigint as monthly_points
   from users u
   inner join points_ledger pl on pl.user_id = u.id
-  where pl.created_at >= date_trunc('month', now() at time zone 'UTC')
+  where pl.created_at >= date_trunc('month', target_month::timestamptz)
+    and pl.created_at < date_trunc('month', target_month::timestamptz) + interval '1 month'
   group by u.id, u.username, u.display_name, u.badge, u.country_code
   having coalesce(sum(pl.delta) filter (where pl.delta > 0), 0) > 0
   order by monthly_points desc
   limit 50;
 $$;
+
+grant execute on function get_monthly_leaderboard(date) to anon, authenticated;
 ```
 
 ### Approve Researcher Application
 
-Generates an API key and grants researcher status to the user. The raw key (sv_live\*) is returned once and never stored in plaintext.
+Generates an API key and grants researcher status to the user. The raw key (`sv_live_*`) is returned once and never stored in plaintext. Called by `POST /api/ops/applications/[id]/approve` — no longer requires manual SQL Editor execution.
 
 ```sql
-create or replace function approve_researcher_application(app_id uuid)
-returns table (
-  raw_key text,
-  message text
-) language plpgsql security definer as $$
+create or replace function approve_researcher_application(p_application_id uuid)
+returns text
+language plpgsql security definer as $$
 declare
   v_user_id uuid;
-  v_key_part1 text;
-  v_key_part2 text;
-  v_key_hash text;
   v_raw_key text;
+  v_key_hash text;
 begin
-  -- Fetch the application and user
   select user_id into v_user_id
   from researcher_applications
-  where id = app_id;
+  where id = p_application_id;
 
   if v_user_id is null then
     raise exception 'Application not found';
@@ -285,23 +372,20 @@ begin
 
   -- Generate raw key
   v_raw_key := 'sv_live_'
-  || replace(gen_random_uuid()::text, '-', '')
-  || replace(gen_random_uuid()::text, '-', '');
+    || replace(gen_random_uuid()::text, '-', '')
+    || replace(gen_random_uuid()::text, '-', '');
   v_key_hash := md5(v_raw_key);
 
-  -- Insert API key
   insert into api_keys (user_id, key_hash, label)
   values (v_user_id, v_key_hash, 'Approved ' || now()::date);
 
-  -- Update application status
   update researcher_applications
   set status = 'approved', reviewed_at = now()
-  where id = app_id;
+  where id = p_application_id;
 
-  -- Grant researcher status
   update users set is_researcher = true where id = v_user_id;
 
-  return query select v_raw_key, 'Application approved. API key shown above. Store it securely — it will not be displayed again.'::text;
+  return v_raw_key;
 end;
 $$;
 
@@ -336,24 +420,24 @@ grant execute on function reject_researcher_application(uuid) to authenticated;
 ## API Key Delivery Workflow
 
 1. User submits application via `/researchers/apply`
-2. Admin runs `SELECT approve_researcher_application(app_id)` in SQL Editor or via admin UI (Phase 4)
-3. Raw key is displayed once (modal or page view) — **user must copy immediately**
-4. Key is hashed with PostgreSQL `md5()` and stored in `api_keys.key_hash`
-5. Admin emails the user the raw key (manual process until Phase 4 Resend integration)
-6. User includes key in `X-API-Key: sv_live_...` header on `/api/v1/reports` requests
-7. Server hashes the incoming key with blueimp-md5 (client-side equivalent of PostgreSQL md5()) and does lookup in `api_keys.key_hash`
+2. Moderator visits `/ops/applications` and clicks Approve
+3. Route calls `approve_researcher_application(id)` RPC
+4. Raw key returned to moderator UI — displayed once in copy-once modal
+5. Resend email automatically sent to researcher with the key (gated on `RESEND_API_KEY`)
+6. Key is hashed with PostgreSQL `md5()` and stored in `api_keys.key_hash`
+7. User includes key in `Authorization: Bearer sv_live_...` header on `/api/v1/` requests
+8. Server hashes incoming key with `blueimp-md5` and looks up in `api_keys.key_hash`
 
-**Important:** The hash must match on both sides. Any change to the hashing algorithm or salt breaks the lookup.
+**Important:** The hash must match on both sides. Any change to the hashing algorithm breaks the lookup.
 
 ---
 
 ## MD5 Hashing (Free Tier Constraint)
 
-pgcrypto extension (with SHA-256, bcrypt, etc.) is not available on Supabase free tier. PostgreSQL's built-in `md5()` function is used as a trade-off:
+`pgcrypto` is not available on Supabase free tier. PostgreSQL's built-in `md5()` is used:
 
-- **Why MD5?** pgcrypto not available. MD5 is acceptable for a non-password lookup hash (API keys are high-entropy).
-- **Client-side match:** blueimp-md5 npm package in submit route and v1/reports route — must match PostgreSQL `md5()` output exactly
-- **Signature:** `md5('sv_live_...')` on both sides
+- **Why MD5?** pgcrypto unavailable. MD5 is acceptable for a non-password lookup hash (API keys are high-entropy).
+- **Client-side match:** `blueimp-md5` npm package in `validateApiKey.ts` — must match PostgreSQL `md5()` output exactly.
 
 ---
 
@@ -371,7 +455,7 @@ begin
     when new.points >= 20000 then 'sage'
     when new.points >= 10000 then 'elite_sentinel'
     when new.points >= 5000  then 'sentinel'
-    when new.points >= 2500   then 'guardian'
+    when new.points >= 2500  then 'guardian'
     else 'watcher'
   end;
   return new;
@@ -409,13 +493,13 @@ for each row execute function sync_vote_counts();
 
 ## Badge Tiers Reference
 
-| Badge          | Points        | Unlocks                            |
-| -------------- | ------------- | ---------------------------------- |
-| Watcher        | 0–2500        | Basic submission, leaderboard      |
-| Guardian       | 2,499-4,999   | Community voting                   |
-| Sentinel       | 5,000–9,999   | Campaign tagging, advanced filters |
-| Elite Sentinel | 10,000–19,999 | Moderator queue, STIX export       |
-| Sage           | 20,000+       | Strategic advisor role             |
+| Badge          | Points        | Unlocks                             |
+| -------------- | ------------- | ----------------------------------- |
+| Watcher        | 0–2,499       | Submit reports, browse feed         |
+| Guardian       | 2,500–4,999   | Community voting (confirm/dispute)  |
+| Sentinel       | 5,000–9,999   | Campaign tagging, advanced filters  |
+| Elite Sentinel | 10,000–19,999 | Moderator queue access, STIX export |
+| Sage           | 20,000+       | Strategic advisor role              |
 
 ---
 
@@ -429,6 +513,10 @@ for each row execute function sync_vote_counts();
 | Novel campaign                                   | +25 bonus |
 | Duplicate (confirms volume)                      | +5        |
 | Full metadata submitted (file + written context) | +5 bonus  |
-| Community vote confirms your report              | +15       |
-| 7-day submission streak                          | +20       |
+| Community vote confirms your report              | +15 \*    |
+| 7-day submission streak                          | +20 \*    |
+| 30-day submission streak                         | +75 \*    |
+| Report featured in weekly digest                 | +20 \*    |
 | Flagged/abusive submission                       | −20       |
+
+\* Constants defined in `calculate.ts`, code paths not yet implemented.

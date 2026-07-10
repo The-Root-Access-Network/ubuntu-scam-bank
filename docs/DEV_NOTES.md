@@ -1035,3 +1035,25 @@ Replaced Tabler `IconBrandGoogle` with official Google brand SVG for accurate br
 **Display name fallback:**
 
 Resend template should use `{{ first_name | default: "there" }}` to handle contacts with missing or placeholder display names.
+
+---
+
+## 2026-07-10
+
+### Legal pages and VOTE_CONFIRM points — `feat/legal-pages-and-vote-confirm`
+
+**Privacy Policy (/privacy) and Terms & Conditions (/terms):**
+
+- Static server component pages. Plain-English documents covering data collection, usage, third-party processors (Supabase, Anthropic, Resend, Vercel), user rights under UK GDPR, cookies, content licensing, and contact information.
+- Governing law: England and Wales. Data controller: The Root Access Network. Minimum age: 16.
+- Feedback form data retained 12 months.
+- Shared prose components (`SectionHeading`, `Body`, `BulletList`, `ContactEmail`) defined inline in each file.
+- Footer Terms and Privacy links updated from `href='#'` placeholders to `/terms` and `/privacy` respectively.
+
+**VOTE_CONFIRM points:**
+
+- Activated the `VOTE_CONFIRM` bonus in the vote route. When a confirm vote pushes a report's confirm_count to a multiple of 3 (3rd, 6th, 9th...), `POINTS.VOTE_CONFIRM` is awarded to the original submitter via a read-then-write points update and a `points_ledger` insert.
+- Non-fatal — wrapped in `try/catch`, vote success is never blocked by points failure.
+- Ledger reason is descriptive: "Report confirmed by community (N confirms)" for ops visibility.
+- Note on race condition: the points increment uses read-then-write (consistent with submit route pattern). At current scale simultaneous confirms on the same report are extremely unlikely. Flag for atomic UPDATE increment when concurrency becomes a concern.
+- The `sync_vote_counts` Postgres trigger fires synchronously within the same transaction as the vote insert, so `confirm_count` is correctly incremented by the time the route reads it for the threshold check.

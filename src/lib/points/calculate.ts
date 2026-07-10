@@ -51,7 +51,7 @@ export const POINTS = {
   HIGH_SEVERITY: 10, // severity >= 4
   NOVEL_CAMPAIGN: 25, // triage flagged is_novel = true
   FULL_METADATA: 5, // file upload + written context both present
-  VOTE_CONFIRM: 15, // community vote confirms the report (Phase 2)
+  VOTE_CONFIRM: 15, // community vote confirms the report
   STREAK_7_DAY: 20, // 7 consecutive days with a submission (Phase 2)
   STREAK_30_DAY: 75, // 30 consecutive days (Phase 2)
   FEATURED_DIGEST: 20, // report selected for weekly digest (Phase 2)
