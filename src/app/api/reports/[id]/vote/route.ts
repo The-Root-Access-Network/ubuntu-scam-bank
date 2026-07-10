@@ -13,6 +13,10 @@
  * 5. Inserts a new row into the 'votes' table with the user's vote.
  *    - The (report_id, user_id) combination is unique, preventing duplicate votes.
  *    - A database trigger updates the report's confirm_count or dispute_count accordingly.
+ * 6. After a successful confirm vote, checks whether the report's confirm_count
+ * has crossed a multiple-of-3 threshold and awards VOTE_CONFIRM bonus points
+ * to the original submitter. This check is non-fatal — a points failure never
+ * surfaces to the voter.
  *
  * Returns a JSON response indicating success or failure, along with appropriate error messages and HTTP status codes.
  */
@@ -20,6 +24,7 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { POINTS } from '@/lib/points/calculate';
 
 const VoteSchema = z.object({
   vote: z.enum(['confirm', 'dispute']),
@@ -90,7 +95,7 @@ export async function POST(
 
   // ── Insert vote ───────────────────────────────────────────────────────────
   // The unique (report_id, user_id) constraint handles duplicate votes.
-  // The sync_vote_counts trigger handles confirm_count / dispute_count.
+  // The sync_vote_counts trigger updates confirm_count / dispute_count.
   let admin;
   try {
     admin = createAdminClient();
@@ -119,6 +124,61 @@ export async function POST(
       { success: false, error: 'Vote failed. Please try again.' },
       { status: 500 },
     );
+  }
+
+  // ── VOTE_CONFIRM bonus — non-fatal ────────────────────────────────────────
+  // Award POINTS.VOTE_CONFIRM to the original submitter every time
+  // the report's confirm count reaches a multiple of 3 (3rd, 6th, 9th…).
+  // The sync_vote_counts trigger fires synchronously within the same
+  // Postgres transaction, so confirm_count is already incremented by the
+  // time we read it here.
+  //
+  // Note: the points increment is a read-then-write rather than an atomic
+  // SQL update. At current scale a race between simultaneous votes is
+  // extremely unlikely, and this pattern is consistent with the submit
+  // route. Flag for atomic UPDATE when concurrency becomes a concern.
+  if (vote === 'confirm') {
+    try {
+      const { data: updatedReport } = await admin
+        .from('reports')
+        .select('confirm_count, submitted_by')
+        .eq('id', reportId)
+        .single();
+
+      if (
+        updatedReport?.submitted_by &&
+        updatedReport.confirm_count > 0 &&
+        updatedReport.confirm_count % 3 === 0
+      ) {
+        const { data: submitter } = await admin
+          .from('users')
+          .select('points')
+          .eq('id', updatedReport.submitted_by)
+          .single();
+
+        if (submitter) {
+          await admin
+            .from('users')
+            .update({
+              points: submitter.points + POINTS.VOTE_CONFIRM,
+            })
+            .eq('id', updatedReport.submitted_by);
+
+          await admin.from('points_ledger').insert({
+            user_id: updatedReport.submitted_by,
+            delta: POINTS.VOTE_CONFIRM,
+            reason: `Report confirmed by community (${updatedReport.confirm_count} confirms)`,
+            ref_id: reportId,
+          });
+        }
+      }
+    } catch (err) {
+      // Non-fatal — vote succeeded, points failure is an ops concern only
+      console.error(
+        '[vote] VOTE_CONFIRM points award failed (non-fatal):',
+        err,
+      );
+    }
   }
 
   return Response.json({ success: true, vote });

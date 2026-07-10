@@ -45,8 +45,8 @@ const FOOTER_LINKS: FooterSection[] = [
         href: 'https://therootaccessnetwork.com',
         external: true,
       },
-      { label: 'Terms', href: '#' },
-      { label: 'Privacy', href: '#' },
+      { label: 'Terms', href: '/terms' },
+      { label: 'Privacy', href: '/privacy' },
     ],
   },
 ];
