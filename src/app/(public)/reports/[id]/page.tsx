@@ -130,6 +130,12 @@ export default async function ReportPage({
   const canViewOriginal = true;
   const canDownloadFile = isSubmitter || isModerator;
 
+  // Images are intentionally displayed inline to everyone (founder decision),
+  // so they need a signed URL for all visitors. Binary files (PDFs, EML, etc.)
+  // are download-gated, so their signed URL must only be generated for
+  // authorized viewers — otherwise it leaks into the public page payload.
+  const isImageFile = report.file_type?.startsWith('image/') ?? false;
+
   // ── 3. Fetch raw_content via admin client (always — visible to all) ───────
   // raw_content is excluded from public_reports view.
   // Admin client reads from the base table directly.
@@ -151,7 +157,7 @@ export default async function ReportPage({
   // Always generated via admin client since the view is public but
   // storage bucket is private. Admin client bypasses storage RLS.
   let fileSignedUrl: string | null = null;
-  if (report.file_path) {
+  if (report.file_path && (isImageFile || canDownloadFile)) {
     try {
       const adminForStorage = createAdminClient();
       const { data: urlData } = await adminForStorage.storage
