@@ -1057,3 +1057,37 @@ Resend template should use `{{ first_name | default: "there" }}` to handle conta
 - Ledger reason is descriptive: "Report confirmed by community (N confirms)" for ops visibility.
 - Note on race condition: the points increment uses read-then-write (consistent with submit route pattern). At current scale simultaneous confirms on the same report are extremely unlikely. Flag for atomic UPDATE increment when concurrency becomes a concern.
 - The `sync_vote_counts` Postgres trigger fires synchronously within the same transaction as the vote insert, so `confirm_count` is correctly incremented by the time the route reads it for the threshold check.
+
+---
+
+## 2026-08-29
+
+### Second email digest (operational) + PII remediation on report 8f44e534
+
+**Digest #2 — data-verified stats (manual Resend Broadcast):**
+
+- Verified claims against live Supabase before send. July 2026 actuals: **10 reports** (8 published, 2 under_review — not the "7" initially drafted, which was the mid-July snapshot), **4 countries** (PK, GB, NG, KE), **18 new users** (confirmed against `users_rows.csv` export).
+- August 2026: 0 reports, 0 new users so far — quiet month. Draft anchored to July as the last full month.
+- Greeting personalisation: `display_name` contact property is populated for only ~11 of 45 users (CSV shows most `display_name` blank). `first_name` is null across contacts. Digest uses `{{{contact.display_name}}}` with the fallback set in the editor's separate fallback box → 11 get a real name, the rest get the fallback. Root cause of degraded personalisation = **most users never set a display_name** (not a CSV-mapping bug).
+- Digest copy live: ten new scam reports (8 live, 2 under review), 18 contributors, countries named, unsubscribe verified working.
+
+**PII remediation — report 8f44e534-71ec-4eb7-b7a3-c62a43a3e4e6 (Momina, PK):**
+
+- Submitter reported that her name was visible in a bank-statement screenshot inside her evidence PDF. Verified `summary`, `raw_content`, and `indicators` were clean of PII — the name existed only inside the stored PDF.
+- Replaced the evidence file via service-role Storage REST (no DB change needed — same format, same path `2ce4b267-…/8f44e534-….pdf`):
+  1. `DELETE /storage/v1/object/scam_reports/{path}` — purged the original (541 KB) object and its PII bytes.
+  2. `POST /storage/v1/object/scam_reports/{path}` with `Spam_Evidence.pdf` (773 KB, 2 pages) as body, `Content-Type: application/pdf`.
+  3. Verified via signed URL download — served bytes are MD5-identical to the replacement (`8e86d430…`). No backup of the old file kept anywhere, by design.
+- Access model confirmed good: "Download PDF" link only renders for `isSubmitter || isModerator`; other users see a "submitter and moderators only" note. Storage bucket private; researcher API returns no file path.
+
+**Signed-URL hardening (code change, `src/app/(public)/reports/[id]/page.tsx`):**
+
+- Found that the signed URL was generated for **every** visitor and embedded in the page payload even when the download link isn't rendered (a savvy user could pull it from page source within its 1-hour expiry).
+- Fix: binary files (PDFs, EML, etc.) only get a signed URL when `canDownloadFile` (submitter/moderator). Images are exempt — they're intentionally displayed inline to everyone per founder decision, so they keep generating signed URLs for all visitors.
+- Added `isImageFile = report.file_type?.startsWith('image/') ?? false` guard.
+
+**Notes for future sessions:**
+
+- `node_modules/` was absent — reinstalled via `npm install`. Build (`npm run build`) compiles cleanly; repo-wide `npm run lint` is noisy with pre-existing warnings in `.open-next/` generated artifacts (not source).
+- `RESEND_API_KEY` in `.env.local` is **restricted to sending only** (401 `restricted_api_key` on contacts/properties reads) — cannot list contacts/properties programmatically with the current key.
+- Resend syntax gotcha (from docs): built-in contact fields use `{{{contact.field_name}}}`; custom Contact Properties use the bare key `{{{PROPERTY_KEY|fallback}}}`. In the visual editor, the fallback lives in its own box, not inline.
