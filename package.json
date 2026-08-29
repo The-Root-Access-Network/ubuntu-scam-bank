@@ -23,7 +23,7 @@
     "blueimp-md5": "^2.19.0",
     "clsx": "^2.1.1",
     "i18n-iso-countries": "^7.14.0",
-    "next": "16.2.6",
+    "next": "16.3.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "tailwind-merge": "^3.6.0",
@@ -40,6 +40,6 @@
     "supabase": "^2.102.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "wrangler": "^4.102.0"
+    "wrangler": "^4.127.1"
   }
 }
